@@ -1,0 +1,157 @@
+@import 'tailwindcss';
+
+@theme {
+	--font-sans:
+		'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+		Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+		'Noto Color Emoji';
+	--font-display: 'Open Sans', system-ui, sans-serif;
+
+	--radius-lg: var(--radius);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-sm: calc(var(--radius) - 4px);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+
+	--color-card: var(--card);
+	--color-card-foreground: var(--foreground);
+
+	--color-popover: var(--card);
+	--color-popover-foreground: var(--foreground);
+
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+
+	--color-muted: var(--subtle-container);
+	--color-muted-foreground: var(--muted-foreground);
+
+	--color-accent: var(--subtle-container);
+	--color-accent-foreground: var(--foreground);
+
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--primary-foreground);
+
+	--color-border: var(--divider);
+	--color-input: var(--divider);
+	--color-ring: var(--primary);
+
+	/* Mapping existing mockup utility classes to new base */
+	--color-surface-container: var(--subtle-container);
+	--color-surface-container-low: var(--subtle-container);
+	--color-surface-container-lowest: var(--card);
+	--color-on-surface-variant: var(--on-surface-variant);
+	--color-outline-variant: var(--outline-variant);
+	--color-primary-fixed-dim: var(--primary-fixed-dim);
+	--color-secondary-fixed: var(--subtle-container);
+
+	--animate-accordion-down: accordion-down 0.2s ease-out;
+	--animate-accordion-up: accordion-up 0.2s ease-out;
+
+	@keyframes accordion-down {
+		from {
+			height: 0;
+		}
+		to {
+			height: var(--radix-accordion-content-height);
+		}
+	}
+	@keyframes accordion-up {
+		from {
+			height: var(--radix-accordion-content-height);
+		}
+		to {
+			height: 0;
+		}
+	}
+}
+
+@layer base {
+	:root {
+		/* Unified Core Set — Hex Color System */
+		--background: #f8fafc;
+		--foreground: #0f172a;
+
+		--card: #ffffff;
+		--subtle-container: #f1f5f9;
+		--divider: #e2e8f0;
+
+		--primary: #002c60;
+		--primary-foreground: #f8fafc;
+		--secondary: rgb(61, 95, 131);
+		--secondary-foreground: #f8fafc;
+
+		--muted-foreground: #475569;
+		--destructive: #ef4444;
+
+		--on-surface-variant: #475569;
+		--outline-variant: #64748b;
+
+		--radius: 0.5rem;
+		--primary-fixed-dim: #93c5fd;
+	}
+
+	.dark {
+		--background: #0f172a;
+		--foreground: #f8fafc;
+
+		--card: #1e293b;
+		--subtle-container: #1e293b;
+		--divider: #334155;
+
+		--primary: #3b82f6;
+		--primary-foreground: #1e3a5f;
+		--secondary: #3f536b;
+		--secondary-foreground: #f8fafc;
+
+		--muted-foreground: #94a3b8;
+		--destructive: #7f1d1d;
+
+		--on-surface-variant: #94a3b8;
+		--outline-variant: #64748b;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground font-sans;
+	}
+}
+
+/* Custom premium classes for easy transition (Tailwind powered) */
+@layer components {
+	.card-premium {
+		@apply bg-card border border-border rounded-lg shadow-lg p-8 transition-all hover:-translate-y-1 hover:shadow-xl;
+	}
+
+	.pulse-dot {
+		position: relative;
+	}
+	.pulse-dot::after {
+		content: '';
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background: inherit;
+		border-radius: 50%;
+		top: 0;
+		left: 0;
+		animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+	@keyframes pulse-ring {
+		0% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(3);
+			opacity: 0;
+		}
+	}
+}

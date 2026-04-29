@@ -1,0 +1,7 @@
+CREATE TABLE permissions (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    guard_name VARCHAR(255) NOT NULL DEFAULT 'web',
+    created_at TIMESTAMP(0) WITHOUT TIME ZONE NULL,
+    updated_at TIMESTAMP(0) WITHOUT TIME ZONE NULL
+);

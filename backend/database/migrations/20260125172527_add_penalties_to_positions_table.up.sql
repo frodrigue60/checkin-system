@@ -1,0 +1,3 @@
+ALTER TABLE positions 
+ADD COLUMN late_penalty_fee DECIMAL(8, 2) NOT NULL DEFAULT 0, 
+ADD COLUMN out_of_range_fee DECIMAL(8, 2) NOT NULL DEFAULT 0;

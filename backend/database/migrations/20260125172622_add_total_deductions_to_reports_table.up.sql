@@ -1,0 +1,2 @@
+ALTER TABLE reports 
+ADD COLUMN total_deductions DECIMAL(10, 2) NOT NULL DEFAULT 0;

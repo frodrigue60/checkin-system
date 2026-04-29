@@ -1,0 +1,2 @@
+ALTER TABLE reports 
+ADD COLUMN total_incidents INTEGER NOT NULL DEFAULT 0;

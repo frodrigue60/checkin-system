@@ -1,0 +1,7 @@
+CREATE TABLE positions (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    hourly_rate DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP(0) WITHOUT TIME ZONE NULL,
+    updated_at TIMESTAMP(0) WITHOUT TIME ZONE NULL
+);

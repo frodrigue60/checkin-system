@@ -1,0 +1,144 @@
+basePath: /
+definitions:
+  attendance-api_internal_models.Attendance:
+    properties:
+      check_in:
+        description: HH:MM:SS
+        type: string
+      check_in_latitude:
+        type: number
+      check_in_longitude:
+        type: number
+      check_out:
+        type: string
+      check_out_latitude:
+        type: number
+      check_out_longitude:
+        type: number
+      created_at:
+        type: string
+      daily_earnings:
+        type: number
+      date:
+        type: string
+      employee_id:
+        type: integer
+      id:
+        type: integer
+      lunch_end:
+        type: string
+      lunch_start:
+        type: string
+      net_hours_worked:
+        type: number
+      updated_at:
+        type: string
+      work_center_id:
+        type: integer
+      work_shift_id:
+        type: integer
+    type: object
+  internal_handlers.CheckInRequest:
+    properties:
+      employee_id:
+        type: integer
+      latitude:
+        type: number
+      longitude:
+        type: number
+    type: object
+  internal_handlers.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Enterprise-grade Attendance and Workforce Management System API.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: JGC Attendance Management API
+  version: "1.0"
+paths:
+  /api/v1/attendance/check-in:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Check-in data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handlers.CheckInRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/attendance-api_internal_models.Attendance'
+      security:
+      - ApiKeyAuth: []
+      summary: Register check-in with GPS validation
+      tags:
+      - Attendance
+  /api/v1/attendance/check-out/{id}:
+    post:
+      parameters:
+      - description: Attendance ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Register check-out and calculate earnings
+      tags:
+      - Attendance
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Success: {token: ''...'', user: {...}}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'Error: Invalid credentials'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Authenticate user and return JWT
+      tags:
+      - Auth
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

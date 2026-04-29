@@ -1,0 +1,3 @@
+ALTER TABLE users 
+ADD COLUMN role_id BIGINT NULL,
+ADD CONSTRAINT users_role_id_foreign FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE SET NULL;

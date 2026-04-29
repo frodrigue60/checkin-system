@@ -1,0 +1,3 @@
+ALTER TABLE users 
+DROP CONSTRAINT IF EXISTS users_role_id_foreign,
+DROP COLUMN IF EXISTS role_id;
