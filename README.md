@@ -2,11 +2,12 @@
 
 An advanced, enterprise-grade Employee Attendance and Workforce Management System built with a high-performance **Go (Fiber)** backend and a reactive **SvelteKit** frontend.
 
-## 🚀 Overview
+## Overview
 
 This system provides precise tracking for employee check-ins, lunch breaks, and check-outs, featuring strict **geofencing perimeter validation** and automated incident detection.
 
 ### Key Features
+
 - **Geofenced Check-In/Out**: Validates user GPS coordinates against Work Center boundaries.
 - **Mobile Workforce (Field Service)**: Support for employees with dynamic locations, allowing multiple daily check-ins and disabling geofence penalties for `field` shift types.
 - **Mandatory Visual Evidence**: Enforces photo capture before `check-out` to ensure auditability of field operations.
@@ -18,15 +19,17 @@ This system provides precise tracking for employee check-ins, lunch breaks, and 
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
+
 - **Core**: Go (Golang)
 - **Framework**: [Fiber](https://gofiber.io/)
 - **Database**: PostgreSQL (Relational persistence)
 - **Connectivity**: SQLX & Lib/PQ
 
 ### Frontend
+
 - **Framework**: [SvelteKit](https://kit.svelte.dev/)
 - **Logic**: TypeScript/JavaScript
 - **Styling**: Vanilla CSS (Tailored UI system)
@@ -34,11 +37,12 @@ This system provides precise tracking for employee check-ins, lunch breaks, and 
 
 ---
 
-## 🏗️ Architecture & Infrastructure
+## Architecture & Infrastructure
 
 The application follows a decoupled Client-Server architecture designed for scalability and clear separation of concerns.
 
 ### Backend Infrastructure (Go)
+
 - **Host**: Go 1.22+ compiled binary.
 - **API Framework**: [Fiber](https://gofiber.io/) — A minimalist, Express-inspired web framework for Go.
 - **Database**: PostgreSQL 15+ — Chosen for its strong ACID compliance and native `TIMESTAMPTZ` / `Interval` support, essential for workforce time-tracking.
@@ -46,13 +50,14 @@ The application follows a decoupled Client-Server architecture designed for scal
 - **Hot Reload**: `Air` — Enhances DX by automatically recompiling the binary on file changes.
 
 ### Frontend Infrastructure (SvelteKit)
+
 - **Framework**: [SvelteKit](https://kit.svelte.dev/) via [Vite](https://vitejs.dev/).
 - **Package Management**: Managed via `Bun` for optimized speed, fallback to `NPM`.
 - **Styling Engine**: Modular Vanilla CSS with a global design token system (Aesthetic: Executive Ethereal).
 
 ---
 
-## 📂 Backend Folder Structure
+## Backend Folder Structure
 
 The backend follows a clean architecture pattern, isolating logic from transport layers:
 
@@ -72,9 +77,10 @@ backend/
 └── scratch/             # DevOps utilities, migration tools, and manual verification scripts.
 ```
 
-## 🏁 Quick Start
+## Quick Start
 
 ### Backend (Developing)
+
 1. Navigate to `/backend`.
 2. Configure your `.env` (DB credentials, Ports).
 3. Run with Live Reload:
@@ -84,6 +90,7 @@ backend/
 4. **Configuración**: Copia `.env.example` a `.env` y ajusta las variables de seguridad y base de datos.
 
 ### Frontend (Developing)
+
 1. Navigate to `/frontend`.
 2. Install dependencies:
    ```bash
@@ -96,26 +103,31 @@ backend/
 
 ---
 
-## 🧪 Quality Assurance & Testing
+## Quality Assurance & Testing
 
 The system includes a comprehensive testing suite to ensure business logic integrity, especially around financial calculations and temporal arithmetic.
 
 ### Backend Testing (Go)
+
 We use `go test` along with `testify` for assertions and `sqlmock` for database isolation.
 
 **Run all tests:**
+
 ```bash
 go test ./...
 ```
 
 **Key Test Areas:**
+
 - **Attendance Logic**: Verification of distance calculations (Haversine), lateness detection (including midnight shifts), and compliance policy enforcement.
 - **Financial Calculations**: Validation of gross/net earnings and penalty deductions based on job positions.
 - **Report Generation**: Ensuring data consistency in aggregated payroll cycles.
 
 ---
 
-## 📘 Documentation
+## Documentation
+
 For deeper context on agents, operational entities, and business logic, refer to:
+
 - [AGENTS.md](./AGENTS.md) - Core logic and architectural entities.
 - [implementation_plan.md](./implementation_plan.md) - Recent refactor history and feature roadmaps.
