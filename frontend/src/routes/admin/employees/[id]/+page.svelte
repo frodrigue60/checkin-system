@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
+	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
 	import { apiFetch } from '$lib/api';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -39,7 +40,7 @@
 		if (res.ok) {
 			data = await res.json();
 		} else {
-			errorMsg = 'Error al cargar el expediente del empleado';
+			errorMsg = $_('admin.employees.details.not_found');
 		}
 		loading = false;
 	}
@@ -70,19 +71,19 @@
 				/>
 			</div>
 			<p class="font-black text-primary uppercase italic tracking-tighter text-xl">
-				Accediendo a Cédula Digital...
+				{$_('admin.employees.details.accessing')}
 			</p>
 		</div>
 	{:else if errorMsg}
 		<div class="max-w-md mx-auto p-12 text-center space-y-6">
 			<AlertTriangle class="h-16 w-16 text-rose-500 mx-auto" />
 			<h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">
-				Expediente No Encontrado
+				{$_('admin.employees.details.not_found')}
 			</h2>
 			<Button
 				href="/admin/employees"
 				variant="outline"
-				class="h-12 px-8 font-black uppercase italic">Cerrar Sesión de Auditoría</Button
+				class="h-12 px-8 font-black uppercase italic">{$_('admin.employees.details.close_audit')}</Button
 			>
 		</div>
 	{:else if data}
@@ -132,7 +133,7 @@
 							<BadgeIcon class="h-3 w-3" /> ID: {data.employee.id}
 						</span>
 						<span class="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest">
-							<Calendar class="h-3 w-3" /> Joined: {data.employee.joined_at}
+							<Calendar class="h-3 w-3" /> {$_('admin.employees.details.joined')}: {data.employee.joined_at}
 						</span>
 					</div>
 					<div
@@ -140,7 +141,7 @@
 							? 'bg-emerald-50 text-emerald-600'
 							: 'bg-slate-100 text-slate-500'} font-black text-[10px] uppercase tracking-[0.2em] italic"
 					>
-						{data.employee.is_active ? 'Active Operational status' : 'Inactive on Directory'}
+						{data.employee.is_active ? $_('admin.employees.details.active_status') : $_('admin.employees.details.inactive_status')}
 					</div>
 				</div>
 			</section>
@@ -155,7 +156,7 @@
 						<Briefcase class="h-5 w-5 text-primary" />
 					</div>
 					<h3 class="text-xl font-black text-primary uppercase italic tracking-tighter">
-						Assignment Matrix
+						{$_('admin.employees.details.assignment_matrix')}
 					</h3>
 				</div>
 
@@ -165,7 +166,7 @@
 						class="group bg-white p-8 rounded-sm border border-slate-100 shadow-xl shadow-slate-200/40 hover:border-primary/20 transition-all"
 					>
 						<p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">
-							Cost Center
+							{$_('admin.employees.details.cost_center')}
 						</p>
 						<h4
 							class="text-2xl font-black text-primary italic uppercase tracking-tighter mb-2 group-hover:translate-x-1 transition-transform"
@@ -173,7 +174,7 @@
 							{data.employee.center_name}
 						</h4>
 						<span class="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase">
-							<MapPin class="h-3 w-3" /> HQ Operational Perimeter
+							<MapPin class="h-3 w-3" /> {$_('admin.employees.details.hq_perimeter')}
 						</span>
 					</a>
 
@@ -182,7 +183,7 @@
 						class="group bg-white p-8 rounded-sm border border-slate-100 shadow-xl shadow-slate-200/40 hover:border-primary/20 transition-all"
 					>
 						<p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">
-							Position
+							{$_('admin.employees.details.position')}
 						</p>
 						<h4
 							class="text-2xl font-black text-primary italic uppercase tracking-tighter mb-2 group-hover:translate-x-1 transition-transform"
@@ -190,7 +191,7 @@
 							{data.employee.position_name}
 						</h4>
 						<span class="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase">
-							<BadgeIcon class="h-3 w-3" /> Tier 2 Management (WIP)
+							<BadgeIcon class="h-3 w-3" /> {$_('admin.employees.details.management_tier')}
 						</span>
 					</a>
 
@@ -199,15 +200,15 @@
 						class="group bg-white p-8 rounded-sm border border-slate-100 shadow-xl shadow-slate-200/40 hover:border-primary/20 transition-all"
 					>
 						<p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">
-							Operational Shift
+							{$_('admin.employees.details.shift')}
 						</p>
 						<h4
 							class="text-2xl font-black text-primary italic uppercase tracking-tighter mb-2 group-hover:translate-x-1 transition-transform"
 						>
-							{data.employee.shift_name || 'Individual Load'}
+							{data.employee.shift_name || $_('admin.employees.details.individual_load')}
 						</h4>
 						<span class="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase">
-							<Clock class="h-3 w-3" /> Standard Day Cycle
+							<Clock class="h-3 w-3" /> {$_('admin.employees.details.standard_cycle')}
 						</span>
 					</a>
 				</div>
@@ -223,7 +224,7 @@
 						<Activity class="h-5 w-5 text-primary" />
 					</div>
 					<h3 class="text-xl font-black text-primary uppercase italic tracking-tighter">
-						Operational Pulse
+						{$_('admin.employees.details.operational_pulse')}
 					</h3>
 				</div>
 
@@ -232,7 +233,7 @@
 					<div class="space-y-4">
 						<div class="flex justify-between items-end">
 							<p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em]">
-								Schedule Compliance
+								{$_('admin.employees.details.compliance')}
 							</p>
 							<span class="text-2xl font-black text-primary italic tracking-tighter"
 								>{complianceScore()}%</span
@@ -254,7 +255,7 @@
 							class="absolute top-4 right-4 h-12 w-12 text-white/10 group-hover:scale-125 transition-transform"
 						/>
 						<p class="text-white/40 font-black text-[10px] uppercase tracking-widest mb-4">
-							Financial Impact (YTD)
+							{$_('admin.employees.details.financial_impact')}
 						</p>
 						<div class="flex items-baseline gap-2">
 							<h4 class="text-5xl font-black italic tracking-tighter">
@@ -266,7 +267,7 @@
 							<div class="mt-6 flex items-center gap-2 text-rose-300">
 								<TrendingDown class="h-4 w-4" />
 								<span class="font-black text-[10px] uppercase tracking-widest italic leading-none"
-									>-{data.stats.total_incidents} Deductions Applied</span
+									>-{data.stats.total_incidents} {$_('admin.employees.details.deductions_applied')}</span
 								>
 							</div>
 						{/if}
@@ -278,10 +279,10 @@
 					>
 						<Activity class="h-6 w-6 text-slate-300" />
 						<p class="text-slate-300 font-black text-[10px] uppercase tracking-widest">
-							Workload Velocity (WIP)
+							{$_('admin.employees.details.workload_velocity')}
 						</p>
 						<p class="text-[9px] text-slate-200 uppercase font-bold italic">
-							Analytics Engine Offline
+							{$_('admin.employees.details.analytics_offline')}
 						</p>
 					</div>
 				</div>
@@ -296,7 +297,7 @@
 					<h3
 						class="text-xl font-black text-primary uppercase italic tracking-tighter flex items-center gap-3"
 					>
-						<AlertTriangle class="h-5 w-5 text-rose-500" /> Active Incidents
+						<AlertTriangle class="h-5 w-5 text-rose-500" /> {$_('admin.employees.details.active_incidents')}
 					</h3>
 
 					<div class="space-y-4">
@@ -306,31 +307,30 @@
 							>
 								<div class="flex justify-between items-start">
 									<h5 class="text-sm font-black text-rose-700 uppercase italic tracking-tight">
-										Late Entry Detected
+										{$_('admin.employees.details.late_detected')}
 									</h5>
 									<span class="text-[9px] font-black text-rose-300 uppercase tracking-widest"
 										>{new Date(incident.check_in).toLocaleDateString()}</span
 									>
 								</div>
 								<p class="text-xs text-rose-900/60 font-medium leading-relaxed italic">
-									Check-in registered past grace period tolerance. Automatic deduction pending cycle
-									close.
+									{$_('admin.employees.details.late_hint')}
 								</p>
 								<div class="flex gap-2">
 									<Badge
 										class="bg-rose-100 text-rose-600 font-black text-[8px] uppercase tracking-widest border-none"
-										>Gravity: Low</Badge
+										>{$_('admin.employees.details.gravity_low')}</Badge
 									>
 									<Badge
 										class="bg-white text-rose-400 font-black text-[8px] uppercase tracking-widest border border-rose-100"
-										>Auto-logged</Badge
+										>{$_('admin.employees.details.auto_logged')}</Badge
 									>
 								</div>
 							</div>
 						{:else}
 							<div class="py-20 text-center border-2 border-dashed border-slate-50 rounded-sm">
 								<p class="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">
-									Pristine Record - No Active Infractions
+									{$_('admin.employees.details.pristine_record')}
 								</p>
 							</div>
 						{/each}
@@ -342,7 +342,7 @@
 					<h3
 						class="text-xl font-black text-primary uppercase italic tracking-tighter flex items-center gap-3"
 					>
-						<History class="h-5 w-5 text-primary" /> Audit Timeline
+						<History class="h-5 w-5 text-primary" /> {$_('admin.employees.details.audit_timeline')}
 					</h3>
 
 					<div class="relative pl-8 border-l border-slate-100 space-y-10 py-2">
@@ -362,14 +362,14 @@
 									>
 										<div class="flex justify-between items-center mb-1">
 											<span class="font-black text-sm text-primary uppercase italic tracking-tight">
-												{event.is_late ? 'Late Check-in' : 'Standard Log'}
+												{event.is_late ? $_('admin.employees.details.late_checkin') : $_('admin.employees.details.standard_log')}
 											</span>
 											<ChevronRight
 												class="h-4 w-4 text-slate-200 group-hover:text-primary transition-colors"
 											/>
 										</div>
 										<p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-											Terminal: {event.work_center_name}
+											{$_('admin.employees.details.terminal')}: {event.work_center_name}
 										</p>
 									</div>
 								</div>
@@ -377,7 +377,7 @@
 						{:else}
 							<div class="text-center py-20">
 								<p class="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">
-									Historical Ledger Empty
+									{$_('admin.employees.details.empty_ledger')}
 								</p>
 							</div>
 						{/each}
@@ -393,7 +393,7 @@
 			<div class="flex items-center gap-3 opacity-40">
 				<ShieldAlert class="h-5 w-5 text-slate-400" />
 				<span class="font-black text-[9px] text-slate-400 uppercase tracking-[0.2em]"
-					>Administrative Clearance Required for State Mutation</span
+					>{$_('admin.employees.details.clearance_required')}</span
 				>
 			</div>
 			<div class="flex items-center gap-4">
@@ -401,12 +401,12 @@
 					variant="ghost"
 					class="font-black text-[10px] uppercase tracking-widest text-primary gap-2 h-12 px-6 bg-slate-50 opacity-50 cursor-not-allowed"
 				>
-					<FileDown class="h-4 w-4" /> Export Ledger (WIP)
+					<FileDown class="h-4 w-4" /> {$_('admin.employees.details.export_ledger')}
 				</Button>
 				<Button
 					class="bg-primary text-white font-black text-[10px] uppercase tracking-widest gap-2 h-12 px-8 shadow-xl shadow-primary/20 opacity-50 cursor-not-allowed"
 				>
-					<Edit3 class="h-4 w-4" /> Modify Profile (WIP)
+					<Edit3 class="h-4 w-4" /> {$_('admin.employees.details.modify_profile')}
 				</Button>
 			</div>
 		</div>

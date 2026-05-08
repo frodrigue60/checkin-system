@@ -105,9 +105,6 @@
 		in:fly={{ y: 20, duration: 800, easing: quintOut }}
 	>
 		<div class="space-y-1">
-			<p class="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">
-				{$_('admin.positions.infrastructure')}
-			</p>
 			<h2 class="text-5xl font-black text-primary tracking-tighter leading-none">{$_('admin.positions.title')}.</h2>
 			<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1 italic">
 				{positions.length} {$_('admin.positions.detected_roles')}

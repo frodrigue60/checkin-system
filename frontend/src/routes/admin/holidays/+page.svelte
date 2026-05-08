@@ -134,9 +134,6 @@
 			in:fly={{ y: 20, duration: 800, easing: quintOut }}
 		>
 			<div class="space-y-1">
-				<p class="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">
-					{$_('admin.holidays.timeline_focus')}
-				</p>
 				<h2 class="text-6xl font-black text-primary leading-none tracking-tighter">
 					{currentYear}
 				</h2>

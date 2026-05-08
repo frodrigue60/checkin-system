@@ -237,13 +237,9 @@
 		in:fly={{ y: 20, duration: 800, easing: quintOut }}
 	>
 		<div>
-			<span class="text-primary font-bold tracking-widest text-[10px] uppercase mb-2 block"
-				>{$_('landing.system_name')}</span
-			>
 			<h2 class="text-4xl font-black text-primary leading-none tracking-tighter mb-4">
-				{$_('admin.centers.header')}
+				{$_('admin.centers.title')}
 			</h2>
-			<div class="w-12 h-1 bg-primary/20 rounded-full"></div>
 		</div>
 		{#if canEdit}
 			<Button

@@ -275,9 +275,6 @@
 			in:fly={{ y: 20, duration: 800, easing: quintOut }}
 		>
 			<div class="space-y-3">
-				<span class="text-primary font-black tracking-[0.3em] uppercase text-[10px]"
-					>{$_('admin.attendance.intelligence')}</span
-				>
 				<h2 class="text-6xl font-black text-primary leading-none tracking-tighter">
 					{$_('admin.attendance.title')}.
 				</h2>
@@ -414,15 +411,15 @@
 					</div>
 
 					<div class="bg-white rounded-sm shadow-sm px-4 py-2 flex flex-col">
-						<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Tipo</label>
+						<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('common.type')}</label>
 						<select
 							bind:value={selectedShiftType}
 							class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 						>
-							<option value="all">Todos</option>
-							<option value="fixed">Fijo</option>
-							<option value="flexible">Flexible</option>
-							<option value="field">Campo</option>
+							<option value="all">{$_('common.all')}</option>
+							<option value="fixed">{$_('common.fixed')}</option>
+							<option value="flexible">{$_('common.flexible')}</option>
+							<option value="field">{$_('common.field')}</option>
 						</select>
 					</div>
 				</div>

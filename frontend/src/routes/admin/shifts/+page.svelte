@@ -310,14 +310,11 @@
 				in:fly={{ y: 20, duration: 800, easing: quintOut }}
 			>
 				<div class="max-w-md">
-					<p class="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50 mb-2">
-						{$_('admin.shifts.structural_config')}
-					</p>
 					<h2 class="text-5xl font-black text-primary leading-none tracking-tighter">
-						{$_('admin.shifts.title')}.
+						{$_('admin.shifts.title')}
 					</h2>
 					<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 italic">
-						{activeCount.toString().padStart(2, '0')}
+						{activeCount.toString().padStart(1, '0')}
 						{$_('admin.shifts.detected_shifts')}
 					</p>
 				</div>

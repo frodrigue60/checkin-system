@@ -172,16 +172,16 @@
 			});
 
 			if (res.ok) {
-				notifications.success($_('history.justification_success'));
+				notifications.success($_('admin.incidents.justify_success'));
 				selectedIds.clear();
 				showJustifyDialog = false;
 				loadIncidents(page);
 			} else {
 				const err = await res.json();
-				notifications.error(err.message || 'Error al justificar');
+				notifications.error(err.message || $_('admin.incidents.justify_error'));
 			}
 		} catch (e) {
-			notifications.error('Error de conexión');
+			notifications.error($_('errors.server_error'));
 		} finally {
 			bulkLoading = false;
 		}
@@ -226,24 +226,18 @@
 		class="mt-8 mb-10"
 		in:fly={{ y: 20, duration: 800, easing: quintOut }}
 	>
-		<span class="text-primary font-bold tracking-widest text-[10px] uppercase mb-2 block"
-			>{$_('admin.incidents.title')}</span
-		>
+		
 		<div class="flex justify-between items-end">
 			<div>
 				<h2 class="text-4xl font-black text-primary leading-none tracking-tighter mb-4">
-					Incidentes
+					{$_('admin.incidents.header')}
 				</h2>
-				<p class="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-2xl">
-					Gestión de anomalías de puntualidad y geoperímetro.
-				</p>
 			</div>
 			<div class="hidden md:flex flex-col items-end">
 				<span class="text-3xl font-black text-slate-900 leading-none">{totalIncidents}</span>
-				<span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Total Pendientes</span>
+				<span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{$_('admin.incidents.total_pending')}</span>
 			</div>
 		</div>
-		<div class="w-12 h-1 bg-primary/20 rounded-full mt-6"></div>
 	</section>
 
 	<!-- Filters & Search -->
@@ -264,28 +258,28 @@
 					bind:value={filterType}
 					class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 				>
-					<option value="all">Todos</option>
+					<option value="all">{$_('common.all')}</option>
 					<option value="late">{$_('admin.incidents.types.late')}</option>
 					<option value="out_of_range">{$_('admin.incidents.types.out_of_range')}</option>
 				</select>
 			</div>
 
 			<div class="bg-white border border-slate-100 p-3 rounded-sm shadow-sm flex flex-col justify-center min-w-[180px]">
-				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Estado</label>
+				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.incidents.filter_status')}</label>
 				<select
 					bind:value={filterStatus}
 					class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 				>
-					<option value="pending">Pendientes</option>
-					<option value="justified">Justificados</option>
-					<option value="approved">Aprobados</option>
-					<option value="rejected">Rechazados</option>
-					<option value="all">Ver Todos</option>
+					<option value="pending">{$_('admin.incidents.status_pending')}</option>
+					<option value="justified">{$_('admin.incidents.status_justified')}</option>
+					<option value="approved">{$_('admin.incidents.status_approved')}</option>
+					<option value="rejected">{$_('admin.incidents.status_rejected')}</option>
+					<option value="all">{$_('admin.incidents.view_all')}</option>
 				</select>
 			</div>
 
 			<div class="bg-white border border-slate-100 p-3 rounded-sm shadow-sm flex flex-col justify-center">
-				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Fecha</label>
+				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.incidents.filter_date')}</label>
 				<input 
 					type="date" 
 					bind:value={filterStart}
@@ -294,12 +288,12 @@
 			</div>
 
 			<div class="bg-white border border-slate-100 p-3 rounded-sm shadow-sm flex flex-col justify-center min-w-[150px]">
-				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Centro</label>
+				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.incidents.filter_center')}</label>
 				<select
 					bind:value={filterCenter}
 					class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 				>
-					<option value="all">Todos</option>
+					<option value="all">{$_('common.all_centers')}</option>
 					{#each centers as center}
 						<option value={center.id}>{center.name}</option>
 					{/each}
@@ -307,12 +301,12 @@
 			</div>
 
 			<div class="bg-white border border-slate-100 p-3 rounded-sm shadow-sm flex flex-col justify-center min-w-[150px]">
-				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Turno</label>
+				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.incidents.filter_shift')}</label>
 				<select
 					bind:value={filterShift}
 					class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 				>
-					<option value="all">Todos</option>
+					<option value="all">{$_('common.all_shifts')}</option>
 					{#each shifts as shift}
 						<option value={shift.id}>{shift.name}</option>
 					{/each}
@@ -320,12 +314,12 @@
 			</div>
 
 			<div class="bg-white border border-slate-100 p-3 rounded-sm shadow-sm flex flex-col justify-center min-w-[150px]">
-				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Puesto</label>
+				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.incidents.filter_position')}</label>
 				<select
 					bind:value={filterPosition}
 					class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 				>
-					<option value="all">Puestos</option>
+					<option value="all">{$_('common.all_positions')}</option>
 					{#each positions as pos}
 						<option value={pos.id}>{pos.name}</option>
 					{/each}
@@ -333,15 +327,15 @@
 			</div>
 
 			<div class="bg-white border border-slate-100 p-3 rounded-sm shadow-sm flex flex-col justify-center min-w-[150px]">
-				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Tipo</label>
+				<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.incidents.filter_type_label')}</label>
 				<select
 					bind:value={filterShiftType}
 					class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 				>
-					<option value="all">Tipos</option>
-					<option value="fixed">Fijo</option>
-					<option value="flexible">Flexible</option>
-					<option value="field">Campo</option>
+					<option value="all">{$_('common.all')}</option>
+					<option value="fixed">{$_('admin.shifts.type_fixed')}</option>
+					<option value="flexible">{$_('admin.shifts.type_flexible')}</option>
+					<option value="field">{$_('admin.shifts.type_field')}</option>
 				</select>
 			</div>
 		</div>
@@ -430,7 +424,7 @@
 								</td>
 								<td class="px-6 py-4">
 									<Badge variant="outline" class="font-black text-[9px] px-2 py-0.5 rounded-sm {getStatusBadge(incident.status)}">
-										{incident.status.toUpperCase()}
+										{$_(`admin.incidents.status_${incident.status}`)}
 									</Badge>
 								</td>
 								<td class="px-6 py-4 text-right">
@@ -478,7 +472,7 @@
 					onclick={() => loadIncidents(page - 1)}
 				>
 					<ChevronLeft size={14} />
-					Anterior
+					{$_('common.previous')}
 				</Button>
 				<Button 
 					variant="outline" 
@@ -487,7 +481,7 @@
 					disabled={page >= totalPages}
 					onclick={() => loadIncidents(page + 1)}
 				>
-					Siguiente
+					{$_('common.next')}
 					<ChevronRight size={14} />
 				</Button>
 			</div>
@@ -526,10 +520,10 @@
 				<div class="h-10 w-10 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
 					<ShieldCheck size={20} />
 				</div>
-				<Dialog.Title class="text-2xl font-black tracking-tighter">Justificar Incidencias</Dialog.Title>
+				<Dialog.Title class="text-2xl font-black tracking-tighter">{$_('admin.incidents.justify_dialog_title')}</Dialog.Title>
 			</div>
 			<Dialog.Description class="text-xs font-black text-slate-400 uppercase tracking-[0.15em] mb-6">
-				Esta acción marcará {targetsToJustify.length} incidente(s) como justificado(s) y recalculará las deducciones financieras asociadas.
+				{$_('admin.incidents.justify_dialog_description', { values: { count: targetsToJustify.length } })}
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -538,7 +532,7 @@
 				<label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">{$_('admin.incidents.justification_note')}</label>
 				<textarea
 					bind:value={justificationNote}
-					placeholder="Ej: Aprobado por supervisión, falla de transporte..."
+					placeholder={$_('admin.incidents.justification_placeholder')}
 					class="w-full min-h-[120px] bg-slate-50 border border-slate-100 rounded-sm p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all"
 				></textarea>
 			</div>
@@ -550,14 +544,14 @@
 				class="flex-1 font-black uppercase text-[10px] tracking-widest h-12"
 				onclick={() => showJustifyDialog = false}
 			>
-				Cancelar
+				{$_('common.cancel')}
 			</Button>
 			<Button 
 				class="flex-1 bg-slate-900 text-white hover:bg-slate-800 font-black uppercase text-[10px] tracking-widest h-12 shadow-lg shadow-slate-900/20"
 				onclick={confirmJustification}
 				disabled={bulkLoading}
 			>
-				{bulkLoading ? 'Procesando...' : 'Confirmar'}
+				{bulkLoading ? $_('admin.incidents.processing') : $_('admin.incidents.confirm')}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

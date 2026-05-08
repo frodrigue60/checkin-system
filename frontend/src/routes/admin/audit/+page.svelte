@@ -116,63 +116,57 @@
 		class="mt-8 mb-10"
 		in:fly={{ y: 20, duration: 800, easing: quintOut }}
 	>
-		<span class="text-primary font-bold tracking-widest text-[10px] uppercase mb-2 block"
-			>{$_('admin.audit.header')}</span
-		>
+		
 		<div class="flex justify-between items-end">
 			<div>
 				<h2 class="text-4xl font-black text-primary leading-none tracking-tighter mb-4">
 					{$_('admin.audit.title')}
 				</h2>
-				<p class="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-2xl">
-					{$_('admin.audit.description')}
-				</p>
 			</div>
 			<div class="hidden md:flex flex-col items-end">
 				<span class="text-3xl font-black text-slate-900 leading-none">{totalLogs}</span>
-				<span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Registros Totales</span>
+				<span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{$_('admin.audit.total_records')}</span>
 			</div>
 		</div>
-		<div class="w-12 h-1 bg-primary/20 rounded-full mt-6"></div>
 	</section>
 
 	<!-- Search & Filters -->
 	<div class="mb-10 grid grid-cols-1 md:grid-cols-4 gap-4" in:fly={{ y: 20, duration: 800, easing: quintOut, delay: 100 }}>
 		<div class="bg-white border border-slate-100 p-4 rounded-sm shadow-sm flex flex-col justify-center">
-			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Entidad</label>
+			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.audit.filter_entity')}</label>
 			<select
 				bind:value={filterEntity}
 				class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 			>
-				<option value="all">Todas las Entidades</option>
-				<option value="employee">Empleados</option>
-				<option value="attendance">Asistencias</option>
-				<option value="work_center">Centros</option>
-				<option value="work_shift">Turnos</option>
-				<option value="position">Puestos</option>
-				<option value="user">Usuarios</option>
-				<option value="report">Reportes</option>
+				<option value="all">{$_('admin.audit.all_entities')}</option>
+				<option value="employee">{$_('admin.audit.entities.employee')}</option>
+				<option value="attendance">{$_('admin.audit.entities.attendance')}</option>
+				<option value="work_center">{$_('admin.audit.entities.work_center')}</option>
+				<option value="work_shift">{$_('admin.audit.entities.work_shift')}</option>
+				<option value="position">{$_('admin.audit.entities.position')}</option>
+				<option value="user">{$_('admin.audit.entities.user')}</option>
+				<option value="report">{$_('admin.audit.entities.report')}</option>
 			</select>
 		</div>
 
 		<div class="bg-white border border-slate-100 p-4 rounded-sm shadow-sm flex flex-col justify-center">
-			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Acción</label>
+			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.audit.filter_action')}</label>
 			<select
 				bind:value={filterAction}
 				class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0 text-primary uppercase"
 			>
-				<option value="all">Todas las Acciones</option>
-				<option value="create">Crear</option>
-				<option value="update">Actualizar</option>
-				<option value="delete">Eliminar</option>
-				<option value="bulk_update">Masivo: Update</option>
-				<option value="bulk_delete">Masivo: Delete</option>
-				<option value="bulk_justify">Masivo: Justificar</option>
+				<option value="all">{$_('admin.audit.all_actions')}</option>
+				<option value="CREATE">{$_('common.add')}</option>
+				<option value="UPDATE">{$_('common.edit')}</option>
+				<option value="DELETE">{$_('common.delete')}</option>
+				<option value="BULK_UPDATE">{$_('admin.audit.actions.BULK_UPDATE_EMPLOYEES')}</option>
+				<option value="BULK_DELETE">{$_('admin.audit.actions.BULK_DELETE_EMPLOYEES')}</option>
+				<option value="BULK_JUSTIFY">{$_('admin.audit.actions.BULK_JUSTIFY_ATTENDANCES')}</option>
 			</select>
 		</div>
 
 		<div class="bg-white border border-slate-100 p-4 rounded-sm shadow-sm flex flex-col justify-center">
-			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Desde</label>
+			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.audit.filter_from')}</label>
 			<input 
 				type="date" 
 				bind:value={filterStart}
@@ -181,7 +175,7 @@
 		</div>
 
 		<div class="bg-white border border-slate-100 p-4 rounded-sm shadow-sm flex flex-col justify-center relative group">
-			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">Hasta</label>
+			<label class="text-[9px] font-black uppercase text-slate-400 mb-1">{$_('admin.audit.filter_to')}</label>
 			<div class="flex items-center justify-between">
 				<input 
 					type="date" 
@@ -198,7 +192,7 @@
 						}}
 						class="text-[9px] font-black text-rose-500 uppercase hover:underline ml-2"
 					>
-						Limpiar
+						{$_('admin.audit.clear')}
 					</button>
 				{/if}
 			</div>
@@ -248,12 +242,12 @@
 								</td>
 								<td class="px-6 py-4">
 									<Badge variant="outline" class="font-black text-[9px] px-2 py-0.5 rounded-sm {getActionColor(log.action)}">
-										{log.action.split('_').slice(1).join(' ').toUpperCase()}
+										{$_(`admin.audit.actions.${log.action}`)}
 									</Badge>
 								</td>
 								<td class="px-6 py-4">
 									<div class="flex flex-col">
-										<span class="text-[10px] font-black text-primary uppercase tracking-tighter">{log.entity_type}</span>
+										<span class="text-[10px] font-black text-primary uppercase tracking-tighter">{$_(`admin.audit.entities.${log.entity_type}`)}</span>
 										<span class="text-[9px] font-bold text-slate-400 tracking-tight">ID: {log.entity_id || 'N/A'}</span>
 									</div>
 								</td>
@@ -290,7 +284,7 @@
 		<!-- Pagination -->
 		<div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
 			<span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-				Página {page} de {totalPages}
+				{$_('common.pagination', { values: { current: page, total: totalPages } })}
 			</span>
 			<div class="flex gap-2">
 				<Button 
@@ -301,7 +295,7 @@
 					onclick={() => loadLogs(page - 1)}
 				>
 					<ChevronLeft size={14} />
-					Anterior
+					{$_('common.previous')}
 				</Button>
 				<Button 
 					variant="outline" 
@@ -310,7 +304,7 @@
 					disabled={page >= totalPages}
 					onclick={() => loadLogs(page + 1)}
 				>
-					Siguiente
+					{$_('common.next')}
 					<ChevronRight size={14} />
 				</Button>
 			</div>
@@ -382,11 +376,11 @@
 				<div class="p-6 bg-slate-50 rounded-md border border-slate-100 flex justify-between items-center">
 					<div class="flex gap-12">
 						<div class="flex flex-col">
-							<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Operador</span>
+							<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{$_('admin.audit.operator')}</span>
 							<span class="text-xs font-black text-slate-700 uppercase tracking-tight">{selectedLog.user_name}</span>
 						</div>
 						<div class="flex flex-col">
-							<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Terminal</span>
+							<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{$_('admin.audit.terminal')}</span>
 							<div class="flex items-center gap-2">
 								<Terminal size={12} class="text-slate-400" />
 								<span class="text-xs font-bold text-slate-500 font-mono">{selectedLog.ip_address || '0.0.0.0'}</span>
@@ -394,7 +388,7 @@
 						</div>
 					</div>
 					<div class="text-right">
-						<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1 block">Estampa de Tiempo</span>
+						<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1 block">{$_('admin.audit.timestamp')}</span>
 						<span class="text-xs font-black text-primary tracking-tight">{new Date(selectedLog.created_at).toLocaleString()}</span>
 					</div>
 				</div>
@@ -406,7 +400,7 @@
 					class="bg-slate-900 text-white hover:bg-slate-800 font-black uppercase text-[10px] tracking-widest h-12 px-8 rounded-sm"
 					onclick={() => showDetails = false}
 				>
-					Cerrar Detalle
+					{$_('admin.audit.close_details')}
 				</Button>
 			</div>
 		</Dialog.Content>

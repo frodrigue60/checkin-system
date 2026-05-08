@@ -210,19 +210,10 @@
 			in:fly={{ y: 20, duration: 800, easing: quintOut }}
 		>
 			<div class="space-y-4">
-				<div
-					class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-primary/5 text-primary text-[10px] font-black uppercase tracking-[0.2em]"
-				>
-					<Globe class="h-3 w-3" />
-					{$_('admin.reports.consolidated_analytics')}
-				</div>
 				<div class="space-y-1">
 					<h2 class="text-7xl font-black text-slate-900 leading-none tracking-tighter">
 						{$_('admin.reports.title')}
 					</h2>
-					<p class="text-slate-400 max-w-sm font-bold text-sm uppercase tracking-wider">
-						{$_('admin.reports.description')}
-					</p>
 				</div>
 			</div>
 		</section>

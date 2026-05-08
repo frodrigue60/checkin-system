@@ -195,7 +195,7 @@
 	}
 
 	async function bulkDelete() {
-		if (!confirm(`¿Borrar ${selectedIds.size} empleados permanentemente?`)) return;
+		if (!confirm($_('admin.employees.bulk_delete_confirm', { values: { count: selectedIds.size } }))) return;
 		bulkLoading = true;
 		const res = await apiFetch('/admin/bulk/employees/delete', {
 			method: 'POST',
@@ -224,9 +224,6 @@
 				in:fly={{ y: 20, duration: 800, easing: quintOut }}
 			>
 				<div class="space-y-1">
-					<p class="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">
-						{$_('admin.employees.human_capital')}
-					</p>
 					<h2 class="text-5xl font-black text-primary leading-none tracking-tighter">
 						{$_('admin.employees.title')}.
 					</h2>
@@ -273,11 +270,11 @@
 
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 					<div class="relative">
-						<select
+							<select
 							bind:value={filterCenter}
 							class="appearance-none w-full bg-white border border-slate-100 rounded-sm py-4 px-6 text-xs font-black uppercase tracking-widest text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all outline-none"
 						>
-							<option value="all">Sedes</option>
+							<option value="all">{$_('common.all_centers')}</option>
 							{#each centers as c}
 								<option value={c.id.toString()}>{c.name}</option>
 							{/each}
@@ -289,7 +286,7 @@
 							bind:value={filterShift}
 							class="appearance-none w-full bg-white border border-slate-100 rounded-sm py-4 px-6 text-xs font-black uppercase tracking-widest text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all outline-none"
 						>
-							<option value="all">Turnos</option>
+							<option value="all">{$_('common.all_shifts')}</option>
 							{#each shifts as s}
 								<option value={s.id.toString()}>{s.name}</option>
 							{/each}
@@ -301,7 +298,7 @@
 							bind:value={filterPosition}
 							class="appearance-none w-full bg-white border border-slate-100 rounded-sm py-4 px-6 text-xs font-black uppercase tracking-widest text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all outline-none"
 						>
-							<option value="all">Puestos</option>
+							<option value="all">{$_('common.all_positions')}</option>
 							{#each positions as p}
 								<option value={p.id.toString()}>{p.name}</option>
 							{/each}
@@ -313,10 +310,10 @@
 							bind:value={filterShiftType}
 							class="appearance-none w-full bg-white border border-slate-100 rounded-sm py-4 px-6 text-xs font-black uppercase tracking-widest text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all outline-none"
 						>
-							<option value="all">Tipos</option>
-							<option value="fixed">Fijo</option>
-							<option value="flexible">Flexible</option>
-							<option value="field">Campo</option>
+							<option value="all">{$_('common.type')}</option>
+							<option value="fixed">{$_('common.fixed')}</option>
+							<option value="flexible">{$_('common.flexible')}</option>
+							<option value="field">{$_('common.field')}</option>
 						</select>
 						<ChevronDown class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
 					</div>
