@@ -28,3 +28,7 @@ temp
 tmp
 scratch
 mockups
+
+# Logs
+backend/logs/
+*.log
