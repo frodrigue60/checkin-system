@@ -1,4 +1,4 @@
-# JGC Attendance System
+# Work Attendance System
 
 An advanced, enterprise-grade Employee Attendance and Workforce Management System built with a high-performance **Go (Fiber)** backend and a reactive **SvelteKit** frontend.
 
