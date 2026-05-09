@@ -132,6 +132,8 @@ To maintain the architectural integrity of the JGC Check-in system, future modif
 - **Geofencing**: Every state change (Check-In, Lunch Start, etc.) MUST independently calculate the distance from the `WorkCenter` coordinates and compare against `tolerance_radius_meter`.
 
 ### 3. **Common Patterns (Contextual Anchors)**
+- **SOLID Handlers**: Avoid "God Object" handlers. Handlers MUST be domain-specific (e.g., `ShiftHandler`, `CenterHandler`) and embed `AdminBase` (Facade Pattern) for shared dependencies.
+- **Querier Interface**: Services MUST depend on `database.Querier` rather than concrete `*sqlx.DB` or `*sqlx.Tx`. This allows the same service method to be used safely in both isolated queries and transactional blocks.
 - **Scanning**: Use `sqlx` and ensure struct tags match exact database column names.
 - **Hander Errors**: Standardize internal errors as `500 Internal Server Error` and business validation failures as `400 Bad Request` or `403 Forbidden`.
 - **Mappers**: Always use `MapAttendanceToDTO` (and similar mappers) to sanitize sensitive fields and format dates for the frontend.
@@ -153,13 +155,14 @@ To maintain the architectural integrity of the JGC Check-in system, future modif
 
 ### 8. **Infrastructure & Performance Standards**
 - **Connection Pooling**: Always ensure `DB.SetMaxOpenConns` and `DB.SetMaxIdleConns` are configured. Never leave default connection limits in production.
-- **Context-Aware Queries**: Use `DB.SelectContext` or `DB.GetContext` with a reasonable `timeout` (e.g., 5-10s) for all HTTP-triggered queries to prevent resource exhaustion.
+- **Context-Aware Queries**: Use `DB.SelectContext` or `DB.GetContext` with `context.Context` (cascaded directly from Fiber's `c.Context()`) for all HTTP-triggered queries to support request cancellation. Background workers MUST use `context.WithTimeout`.
 - **N+1 Prevention**: Avoid querying the database inside loops. Use `sqlx.In` or JOINs to fetch related data in a single round-trip.
+- **Structured Logging**: The use of `fmt.Printf` and `fmt.Println` is BANNED in production code. Always use `utils.GetLogger()` with structured `zap` fields for reliable observability.
 
 ### 9. **Business Logic & Validation Standards**
 - **Centralized Validation**: Use `utils.ParseAndValidate(c, &req)` for all POST/PUT requests to ensure type safety and constraint enforcement via `go-playground/validator`.
-- **Service-Driven Logic**: Complex logic (Earnings, Distance, Incident detection) MUST reside in `AttendanceService`.
-- **Transactional Consistency**: Use `AutoDetectIncidentsTx` within database transactions to ensure all incidents and financial totals are synchronized atomically.
+- **Service-Driven Logic**: Complex logic (Earnings, Distance, Incident detection) MUST reside in their respective Services (e.g., `AttendanceService`).
+- **Transactional Consistency (Unit of Work)**: Destructive or multi-table operations (e.g., UpdateAttendance, UpdateIncidentStatus) MUST be wrapped in a database transaction (`DB.BeginTxx`). Pass the transaction down to the service layer using the `database.Querier` interface to guarantee atomic commits or rollbacks.
 - **Flexible Time Parsing**: Use `s.ParseFlexibleTime` to support varied timestamp formats and prevent parsing errors.
 
 ### 7. **Security & Error Handling Standards**

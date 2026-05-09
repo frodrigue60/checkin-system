@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -28,7 +29,7 @@ func TestReportService_InvalidateReports(t *testing.T) {
 			WithArgs(employeeID, dateStr).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		err := s.InvalidateReports(employeeID, attendanceDate)
+		err := s.InvalidateReports(context.Background(), sqlxDB, employeeID, attendanceDate)
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

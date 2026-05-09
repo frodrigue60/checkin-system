@@ -1,7 +1,9 @@
 package services
 
 import (
+	"attendance-api/internal/database"
 	"attendance-api/internal/models"
+	"context"
 	"encoding/json"
 	"github.com/jmoiron/sqlx"
 )
@@ -10,17 +12,13 @@ type AlertService struct {
 	DB *sqlx.DB
 }
 
-func (s *AlertService) CreateAlert(alertType, severity, message string, metadata interface{}) error {
-	return s.CreateAlertTx(nil, alertType, severity, message, metadata)
-}
-
-func (s *AlertService) CreateAlertTx(tx *sqlx.Tx, alertType, severity, message string, metadata interface{}) error {
+func (s *AlertService) CreateAlert(ctx context.Context, q database.Querier, alertType, severity, message string, metadata interface{}) error {
 	var metadataStr *string
 	if metadata != nil {
 		b, err := json.Marshal(metadata)
 		if err == nil {
-			s := string(b)
-			metadataStr = &s
+			str := string(b)
+			metadataStr = &str
 		}
 	}
 
@@ -29,16 +27,16 @@ func (s *AlertService) CreateAlertTx(tx *sqlx.Tx, alertType, severity, message s
 		VALUES ($1, $2, $3, $4)`
 
 	var err error
-	if tx != nil {
-		_, err = tx.Exec(query, alertType, severity, message, metadataStr)
+	if q != nil {
+		_, err = q.ExecContext(ctx, query, alertType, severity, message, metadataStr)
 	} else {
-		_, err = s.DB.Exec(query, alertType, severity, message, metadataStr)
+		_, err = s.DB.ExecContext(ctx, query, alertType, severity, message, metadataStr)
 	}
 	
 	return err
 }
 
-func (s *AlertService) ListAlerts(onlyUnread bool, limit int) ([]models.SystemAlert, error) {
+func (s *AlertService) ListAlerts(ctx context.Context, onlyUnread bool, limit int) ([]models.SystemAlert, error) {
 	alerts := []models.SystemAlert{}
 	query := "SELECT * FROM system_alerts "
 	if onlyUnread {
@@ -46,11 +44,11 @@ func (s *AlertService) ListAlerts(onlyUnread bool, limit int) ([]models.SystemAl
 	}
 	query += "ORDER BY created_at DESC LIMIT $1"
 	
-	err := s.DB.Select(&alerts, query, limit)
+	err := s.DB.SelectContext(ctx, &alerts, query, limit)
 	return alerts, err
 }
 
-func (s *AlertService) MarkAsRead(id int) error {
-	_, err := s.DB.Exec("UPDATE system_alerts SET is_read = true WHERE id = $1", id)
+func (s *AlertService) MarkAsRead(ctx context.Context, id int) error {
+	_, err := s.DB.ExecContext(ctx, "UPDATE system_alerts SET is_read = true WHERE id = $1", id)
 	return err
 }

@@ -1,12 +1,12 @@
 package services
 
 import (
+	"attendance-api/internal/database"
 	"attendance-api/internal/models"
+	"context"
 	"fmt"
 	"math"
 	"time"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type AttendanceService struct{}
@@ -231,9 +231,9 @@ func (s *AttendanceService) CalculateEarnings(hours float64, hourlyRate float64,
 }
 
 // RecalculateAttendance updates the net hours and earnings based on current timestamps and incidents
-func (s *AttendanceService) RecalculateAttendance(db *sqlx.DB, attID int) error {
+func (s *AttendanceService) RecalculateAttendance(ctx context.Context, q database.Querier, attID int) error {
 	var att models.Attendance
-	if err := db.Get(&att, "SELECT * FROM attendances WHERE id = $1", attID); err != nil {
+	if err := q.GetContext(ctx, &att, "SELECT * FROM attendances WHERE id = $1", attID); err != nil {
 		return err
 	}
 
@@ -255,18 +255,18 @@ func (s *AttendanceService) RecalculateAttendance(db *sqlx.DB, attID int) error 
 
 	// 2. Get Employee & Position
 	var emp models.Employee
-	if err := db.Get(&emp, "SELECT * FROM employees WHERE id = $1", att.EmployeeID); err != nil {
+	if err := q.GetContext(ctx, &emp, "SELECT * FROM employees WHERE id = $1", att.EmployeeID); err != nil {
 		return err
 	}
 
 	var pos models.Position
-	if err := db.Get(&pos, "SELECT * FROM positions WHERE id = $1", emp.PositionID); err != nil {
+	if err := q.GetContext(ctx, &pos, "SELECT * FROM positions WHERE id = $1", emp.PositionID); err != nil {
 		return err
 	}
 
 	// 3. Get Incidents
 	var incidents []models.Incident
-	if err := db.Unsafe().Select(&incidents, "SELECT * FROM incidents WHERE attendance_id = $1", att.ID); err != nil {
+	if err := q.SelectContext(ctx, &incidents, "SELECT * FROM incidents WHERE attendance_id = $1", att.ID); err != nil {
 		return err
 	}
 
@@ -274,12 +274,12 @@ func (s *AttendanceService) RecalculateAttendance(db *sqlx.DB, attID int) error 
 	earnings := s.CalculateEarnings(hours, pos.HourlyRate, incidents, pos)
 
 	// 5. Update DB
-	_, err := db.Exec("UPDATE attendances SET net_hours_worked = $1, daily_earnings = $2, updated_at = NOW() WHERE id = $3", hours, earnings, att.ID)
+	_, err := q.ExecContext(ctx, "UPDATE attendances SET net_hours_worked = $1, daily_earnings = $2, updated_at = NOW() WHERE id = $3", hours, earnings, att.ID)
 	return err
 }
 
 // CreateGeofenceIncident creates an out of range incident if necessary
-func (s *AttendanceService) CreateGeofenceIncident(tx *sqlx.Tx, empID, centerID, attID int, lat, lon float64, center models.WorkCenter, action string) error {
+func (s *AttendanceService) CreateGeofenceIncident(ctx context.Context, q database.Querier, empID, centerID, attID int, lat, lon float64, center models.WorkCenter, action string) error {
 	distance := s.CalculateDistance(lat, lon, center.Latitude, center.Longitude)
 	
 	// If center is "Field/Mobile" (could be a specific ID or we check shift later)
@@ -289,7 +289,7 @@ func (s *AttendanceService) CreateGeofenceIncident(tx *sqlx.Tx, empID, centerID,
 	if distance > float64(center.ToleranceRadiusMeters) {
 		now := time.Now()
 		metadata := fmt.Sprintf(`{"action": "%s", "distance": %.2f, "limit": %d}`, action, distance, center.ToleranceRadiusMeters)
-		_, err := tx.Exec(`INSERT INTO incidents 
+		_, err := q.ExecContext(ctx, `INSERT INTO incidents 
 			(employee_id, work_center_id, attendance_id, type, metadata_json, is_late, delay_minutes, is_out_of_range, distance, status, created_at, updated_at) 
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, 
 			empID, centerID, attID, models.IncidentTypeOutOfRange, metadata, false, 0, true, int(distance), models.StatusPending, now, now)
@@ -298,144 +298,14 @@ func (s *AttendanceService) CreateGeofenceIncident(tx *sqlx.Tx, empID, centerID,
 	return nil
 }
 
-// AutoDetectIncidentsTx is the transactional version of AutoDetectIncidents
-func (s *AttendanceService) AutoDetectIncidentsTx(tx *sqlx.Tx, attID int) error {
-	var att models.Attendance
-	if err := tx.Get(&att, "SELECT * FROM attendances WHERE id = $1", attID); err != nil {
-		return err
-	}
 
-	if att.WorkShiftID == nil {
-		return nil
-	}
 
-	var shift models.WorkShift
-	if err := tx.Get(&shift, "SELECT * FROM work_shifts WHERE id = $1", *att.WorkShiftID); err != nil {
-		return err
-	}
 
-	var emp models.Employee
-	if err := tx.Get(&emp, "SELECT * FROM employees WHERE id = $1", att.EmployeeID); err != nil {
-		return err
-	}
-
-	var wc models.WorkCenter
-	if att.WorkCenterID != nil {
-		tx.Get(&wc, "SELECT * FROM work_centers WHERE id = $1", *att.WorkCenterID)
-	}
-	timezone := "UTC"
-	if wc.Timezone != "" {
-		timezone = wc.Timezone
-	}
-
-	now := time.Now()
-
-	// 0. Check Absence
-	if att.CheckIn == nil {
-		if s.IsShiftOver(now, shift, timezone) {
-			reason := "Inasistencia detectada automáticamente"
-			_, err := tx.Exec(`UPDATE attendances SET is_absence = true, absence_reason = $1, updated_at = $2 WHERE id = $3`,
-				reason, now, att.ID)
-			if err != nil { return fmt.Errorf("error marking absence: %w", err) }
-			att.IsAbsence = true
-		}
-	}
-
-	// 1. Check Lateness
-	if att.CheckIn != nil && !att.IsAbsence && shift.EnforceLateness && (shift.ShiftType == "fixed" || shift.ShiftType == "") {
-		isLate, delayMinutes := s.CheckIfLate(*att.CheckIn, shift, timezone)
-		if isLate {
-			var count int
-			tx.Get(&count, "SELECT COUNT(*) FROM incidents WHERE attendance_id = $1 AND type = $2", att.ID, models.IncidentTypeLate)
-			if count == 0 {
-				_, err := tx.Exec(`INSERT INTO incidents 
-					(employee_id, work_center_id, attendance_id, type, delay_minutes, is_late, status, created_at, updated_at) 
-					VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8)`,
-					att.EmployeeID, att.WorkCenterID, att.ID, models.IncidentTypeLate, delayMinutes, models.StatusPending, now, now)
-				if err != nil { return fmt.Errorf("error inserting late incident: %w", err) }
-			} else {
-				tx.Exec("UPDATE incidents SET delay_minutes = $1, updated_at = NOW() WHERE attendance_id = $2 AND type = $3", delayMinutes, att.ID, models.IncidentTypeLate)
-			}
-		} else {
-			tx.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLate, models.StatusPending)
-		}
-	} else if !shift.EnforceLateness {
-		tx.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLate, models.StatusPending)
-	}
-
-	// 2. Check Lunch Overstay
-	if att.LunchStart != nil && att.LunchEnd != nil && shift.EnforceLunchLimit {
-		lunchDuration := att.LunchEnd.Sub(*att.LunchStart).Minutes()
-		allowedTime, err := s.ParseFlexibleTime(shift.AllowedLunchTime)
-		if err == nil {
-			allowedMinutes := float64(allowedTime.Hour()*60 + allowedTime.Minute())
-			if lunchDuration > (allowedMinutes + 1) { // 1 min grace
-				delay := int(lunchDuration - allowedMinutes)
-				var count int
-				tx.Get(&count, "SELECT COUNT(*) FROM incidents WHERE attendance_id = $1 AND type = $2", att.ID, models.IncidentTypeLunchOverstay)
-				if count == 0 {
-					_, err := tx.Exec(`INSERT INTO incidents 
-						(employee_id, work_center_id, attendance_id, type, delay_minutes, status, created_at, updated_at) 
-						VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-						att.EmployeeID, att.WorkCenterID, att.ID, models.IncidentTypeLunchOverstay, delay, models.StatusPending, now, now)
-					if err != nil { return fmt.Errorf("error inserting lunch incident: %w", err) }
-				} else {
-					tx.Exec("UPDATE incidents SET delay_minutes = $1, updated_at = NOW() WHERE attendance_id = $2 AND type = $3", delay, att.ID, models.IncidentTypeLunchOverstay)
-				}
-			} else {
-				tx.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLunchOverstay, models.StatusPending)
-			}
-		}
-	} else if !shift.EnforceLunchLimit {
-		tx.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLunchOverstay, models.StatusPending)
-	}
-
-	return s.RecalculateAttendanceTx(tx, att.ID)
-}
-
-// RecalculateAttendanceTx is the transactional version of RecalculateAttendance
-func (s *AttendanceService) RecalculateAttendanceTx(tx *sqlx.Tx, attID int) error {
-	var att models.Attendance
-	if err := tx.Get(&att, "SELECT * FROM attendances WHERE id = $1", attID); err != nil {
-		return err
-	}
-
-	if att.CheckIn == nil || att.CheckOut == nil {
-		return nil
-	}
-
-	duration := att.CheckOut.Sub(*att.CheckIn)
-	if att.LunchStart != nil && att.LunchEnd != nil {
-		duration -= att.LunchEnd.Sub(*att.LunchStart)
-	}
-	hours := duration.Hours()
-	if hours < 0 { hours = 0 }
-
-	var emp models.Employee
-	if err := tx.Get(&emp, "SELECT * FROM employees WHERE id = $1", att.EmployeeID); err != nil {
-		return err
-	}
-
-	var pos models.Position
-	if err := tx.Get(&pos, "SELECT * FROM positions WHERE id = $1", emp.PositionID); err != nil {
-		return err
-	}
-
-	var incidents []models.Incident
-	if err := tx.Select(&incidents, "SELECT * FROM incidents WHERE attendance_id = $1", att.ID); err != nil {
-		return err
-	}
-
-	earnings := s.CalculateEarnings(hours, pos.HourlyRate, incidents, pos)
-
-	_, err := tx.Exec("UPDATE attendances SET net_hours_worked = $1, daily_earnings = $2, updated_at = NOW() WHERE id = $3", hours, earnings, att.ID)
-	return err
-}
 
 // AutoDetectIncidents scans an attendance record and creates missing incidents based on shift rules
-func (s *AttendanceService) AutoDetectIncidents(db *sqlx.DB, attID int) error {
+func (s *AttendanceService) AutoDetectIncidents(ctx context.Context, q database.Querier, attID int) error {
 	var att models.Attendance
-	if err := db.Get(&att, "SELECT * FROM attendances WHERE id = $1", attID); err != nil {
+	if err := q.GetContext(ctx, &att, "SELECT * FROM attendances WHERE id = $1", attID); err != nil {
 		return err
 	}
 
@@ -444,18 +314,18 @@ func (s *AttendanceService) AutoDetectIncidents(db *sqlx.DB, attID int) error {
 	}
 
 	var shift models.WorkShift
-	if err := db.Get(&shift, "SELECT * FROM work_shifts WHERE id = $1", *att.WorkShiftID); err != nil {
+	if err := q.GetContext(ctx, &shift, "SELECT * FROM work_shifts WHERE id = $1", *att.WorkShiftID); err != nil {
 		return err
 	}
 
 	var emp models.Employee
-	if err := db.Get(&emp, "SELECT * FROM employees WHERE id = $1", att.EmployeeID); err != nil {
+	if err := q.GetContext(ctx, &emp, "SELECT * FROM employees WHERE id = $1", att.EmployeeID); err != nil {
 		return err
 	}
 
 	var wc models.WorkCenter
 	if att.WorkCenterID != nil {
-		db.Get(&wc, "SELECT * FROM work_centers WHERE id = $1", *att.WorkCenterID)
+		q.GetContext(ctx, &wc, "SELECT * FROM work_centers WHERE id = $1", *att.WorkCenterID)
 	}
 	timezone := "UTC"
 	if wc.Timezone != "" {
@@ -468,7 +338,7 @@ func (s *AttendanceService) AutoDetectIncidents(db *sqlx.DB, attID int) error {
 	if att.CheckIn == nil {
 		if s.IsShiftOver(now, shift, timezone) {
 			reason := "Inasistencia detectada automáticamente"
-			_, err := db.Exec(`UPDATE attendances SET is_absence = true, absence_reason = $1, updated_at = $2 WHERE id = $3`,
+			_, err := q.ExecContext(ctx, `UPDATE attendances SET is_absence = true, absence_reason = $1, updated_at = $2 WHERE id = $3`,
 				reason, now, att.ID)
 			if err != nil { return fmt.Errorf("error marking absence: %w", err) }
 			// Also update local copy for subsequent checks
@@ -483,24 +353,24 @@ func (s *AttendanceService) AutoDetectIncidents(db *sqlx.DB, attID int) error {
 		if isLate {
 			// Check if incident already exists
 			var count int
-			db.Get(&count, "SELECT COUNT(*) FROM incidents WHERE attendance_id = $1 AND type = $2", att.ID, models.IncidentTypeLate)
+			q.GetContext(ctx, &count, "SELECT COUNT(*) FROM incidents WHERE attendance_id = $1 AND type = $2", att.ID, models.IncidentTypeLate)
 			if count == 0 {
-				_, err := db.Exec(`INSERT INTO incidents 
+				_, err := q.ExecContext(ctx, `INSERT INTO incidents 
 					(employee_id, work_center_id, attendance_id, type, delay_minutes, is_late, status, created_at, updated_at) 
 					VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8)`,
 					att.EmployeeID, att.WorkCenterID, att.ID, models.IncidentTypeLate, delayMinutes, models.StatusPending, now, now)
 				if err != nil { return fmt.Errorf("error inserting late incident: %w", err) }
 			} else {
 				// Update delay if it changed
-				db.Exec("UPDATE incidents SET delay_minutes = $1, updated_at = NOW() WHERE attendance_id = $2 AND type = $3", delayMinutes, att.ID, models.IncidentTypeLate)
+				q.ExecContext(ctx, "UPDATE incidents SET delay_minutes = $1, updated_at = NOW() WHERE attendance_id = $2 AND type = $3", delayMinutes, att.ID, models.IncidentTypeLate)
 			}
 		} else {
 			// No longer late? Delete existing late incident if it's still pending
-			db.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLate, models.StatusPending)
+			q.ExecContext(ctx, "DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLate, models.StatusPending)
 		}
 	} else if !shift.EnforceLateness {
 		// If policy changed to non-enforced, remove pending incidents
-		db.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLate, models.StatusPending)
+		q.ExecContext(ctx, "DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLate, models.StatusPending)
 	}
 
 	// 2. Check Lunch Overstay
@@ -513,29 +383,29 @@ func (s *AttendanceService) AutoDetectIncidents(db *sqlx.DB, attID int) error {
 			if lunchDuration > allowedMinutes {
 				delay := int(lunchDuration - allowedMinutes)
 				var count int
-				db.Get(&count, "SELECT COUNT(*) FROM incidents WHERE attendance_id = $1 AND type = $2", att.ID, models.IncidentTypeLunchOverstay)
+				q.GetContext(ctx, &count, "SELECT COUNT(*) FROM incidents WHERE attendance_id = $1 AND type = $2", att.ID, models.IncidentTypeLunchOverstay)
 				if count == 0 {
-					_, err := db.Exec(`INSERT INTO incidents 
+					_, err := q.ExecContext(ctx, `INSERT INTO incidents 
 						(employee_id, work_center_id, attendance_id, type, delay_minutes, status, created_at, updated_at) 
 						VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 						att.EmployeeID, att.WorkCenterID, att.ID, models.IncidentTypeLunchOverstay, delay, models.StatusPending, now, now)
 					if err != nil { return fmt.Errorf("error inserting lunch incident: %w", err) }
 				} else {
 					// Update delay
-					db.Exec("UPDATE incidents SET delay_minutes = $1, updated_at = NOW() WHERE attendance_id = $2 AND type = $3", delay, att.ID, models.IncidentTypeLunchOverstay)
+					q.ExecContext(ctx, "UPDATE incidents SET delay_minutes = $1, updated_at = NOW() WHERE attendance_id = $2 AND type = $3", delay, att.ID, models.IncidentTypeLunchOverstay)
 				}
 			} else {
 				// No longer overstay? Delete if pending
-				db.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLunchOverstay, models.StatusPending)
+				q.ExecContext(ctx, "DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLunchOverstay, models.StatusPending)
 			}
 		}
 	} else if !shift.EnforceLunchLimit {
 		// If policy changed, remove pending
-		db.Exec("DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLunchOverstay, models.StatusPending)
+		q.ExecContext(ctx, "DELETE FROM incidents WHERE attendance_id = $1 AND type = $2 AND status = $3", att.ID, models.IncidentTypeLunchOverstay, models.StatusPending)
 	}
 
 	// 3. Recalculate financial data
-	return s.RecalculateAttendance(db, att.ID)
+	return s.RecalculateAttendance(ctx, q, att.ID)
 }
 
 

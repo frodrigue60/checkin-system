@@ -220,7 +220,7 @@ func (h *ReportHandler) GenerateFullReport(c *fiber.Ctx) error {
 	}
 
 	// 2. Auditoría inicial dentro de la misma transacción
-	err = h.AuditService.LogActionTx(tx, userID, models.AuditActionGenerateReport, "report", 0, req, fiber.Map{"job_id": jobID}, c.IP())
+	err = h.AuditService.LogAction(c.Context(), tx, userID, models.AuditActionGenerateReport, "report", 0, req, fiber.Map{"job_id": jobID}, c.IP())
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Error al registrar auditoría"})
 	}
@@ -527,7 +527,7 @@ func (h *ReportHandler) DeleteReports(c *fiber.Ctx) error {
 	rows, _ := result.RowsAffected()
 	
 	userID := c.Locals("user_id").(int)
-	err = h.AuditService.LogActionTx(tx, userID, models.AuditActionDeleteReport, "report", 0, fiber.Map{"start": startDate, "end": endDate}, nil, c.IP())
+	err = h.AuditService.LogAction(c.Context(), tx, userID, models.AuditActionDeleteReport, "report", 0, fiber.Map{"start": startDate, "end": endDate}, nil, c.IP())
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Error al registrar auditoría"})
 	}
@@ -555,8 +555,12 @@ func (h *ReportHandler) DeleteReportByID(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(int)
-	idInt, _ := strconv.Atoi(id)
-	err = h.AuditService.LogActionTx(tx, userID, models.AuditActionDeleteReport, "report", idInt, nil, nil, c.IP())
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
+	}
+	err = h.AuditService.LogAction(c.Context(), tx, userID, models.AuditActionDeleteReport, "report", idInt, nil, nil, c.IP())
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Error al registrar auditoría"})
 	}

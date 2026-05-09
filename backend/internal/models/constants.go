@@ -53,4 +53,18 @@ const (
 	AuditActionBulkUpdateEmployees   = "BULK_UPDATE_EMPLOYEES"
 	AuditActionBulkDeleteEmployees   = "BULK_DELETE_EMPLOYEES"
 	AuditActionBulkJustifyAttendances = "BULK_JUSTIFY_ATTENDANCES"
+	AuditActionCreateUser            = "CREATE_USER"
+)
+
+// Role slugs — use these instead of numeric IDs in queries.
+// Open/Closed Principle: add new roles without changing existing queries.
+//
+// Usage in queries:
+//   "WHERE role_id = (SELECT id FROM roles WHERE slug = $1)", models.RoleSlugManager
+const (
+	RoleSlugAdmin      = "admin"
+	RoleSlugManager    = "manager"
+	RoleSlugSupervisor = "supervisor"
+	RoleSlugEmployee   = "employee"
+	RoleSlugUser       = "user"
 )

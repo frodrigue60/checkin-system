@@ -14,6 +14,7 @@ type Config struct {
 	AppName        string
 	AllowedOrigins string
 	EnableSwagger  bool
+	SwaggerHost    string
 }
 
 func LoadConfig() *Config {
@@ -32,13 +33,24 @@ func LoadConfig() *Config {
 	dbURL := "postgres://" + user + ":" + pass + "@" + host + ":" + port + "/" + dbname + "?sslmode=" + sslmode
 
 	return &Config{
-		DBURL:     dbURL,
+		DBURL:          dbURL,
 		Port:           getEnv("PORT", "3000"),
-		JWTSecret:      getEnv("JWT_SECRET", "super-secret-key-change-me-in-production"),
+		JWTSecret:      requireEnv("JWT_SECRET"),
 		AppName:        getEnv("APP_NAME", "Attendance System"),
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:5173"),
 		EnableSwagger:  getEnv("ENABLE_SWAGGER", "true") == "true",
+		SwaggerHost:    getEnv("SWAGGER_HOST", "localhost:3000"),
 	}
+}
+
+// requireEnv panics if a required environment variable is not set.
+// Fail-Fast Pattern: prevents the app from running with insecure defaults.
+func requireEnv(key string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok || value == "" {
+		log.Fatalf("FATAL: Required environment variable %s is not set. Cannot start.", key)
+	}
+	return value
 }
 
 func getEnv(key, fallback string) string {

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -28,7 +29,7 @@ func TestAlertService_CreateAlert(t *testing.T) {
 			WithArgs(alertType, severity, message, sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err := s.CreateAlert(alertType, severity, message, metadata)
+		err := s.CreateAlert(context.Background(), sqlxDB, alertType, severity, message, metadata)
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

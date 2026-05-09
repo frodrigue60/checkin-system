@@ -10,7 +10,7 @@ import (
 	"log"
 	_ "time/tzdata"
 
-	_ "attendance-api/docs"
+	docs "attendance-api/docs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -79,6 +79,29 @@ func main() {
 		JustificationService: justificationService,
 		Cache:                c,
 	}
+
+	// Domain-specific handlers — SOLID (S): each handles one entity type
+	base := handlers.AdminBase{
+		DB:                   db,
+		PDFService:           pdfService,
+		AttendanceService:    attendanceService,
+		AuditService:         auditService,
+		ReportService:        reportService,
+		AlertService:         alertService,
+		JustificationService: justificationService,
+		Cache:                c,
+	}
+	centerHandler := &handlers.CenterHandler{AdminBase: base}
+	shiftHandler := &handlers.ShiftHandler{AdminBase: base}
+	positionHandler := &handlers.PositionHandler{AdminBase: base}
+	employeeHandler := &handlers.EmployeeAdminHandler{AdminBase: base}
+	holidayHandler := &handlers.HolidayHandler{AdminBase: base}
+	attAdminHandler := &handlers.AttendanceAdminHandler{AdminBase: base}
+	incidentHandler := &handlers.IncidentHandler{AdminBase: base}
+	dashboardHandler := &handlers.DashboardHandler{AdminBase: base}
+	exportHandler := &handlers.ExportHandler{AdminBase: base}
+	bulkHandler := &handlers.BulkHandler{AdminBase: base}
+
 	attendanceHandler := &handlers.AttendanceHandler{
 		DB:                   db,
 		Service:              attendanceService,
@@ -110,6 +133,7 @@ func main() {
 
 	// Swagger
 	if cfg.EnableSwagger {
+		docs.SwaggerInfo.Host = cfg.SwaggerHost
 		app.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
@@ -118,9 +142,13 @@ func main() {
 
 	// Health Check
 	api.Get("/health", func(c *fiber.Ctx) error {
+		dbStatus := "connected"
+		if err := db.Ping(); err != nil {
+			dbStatus = "disconnected"
+		}
 		return c.JSON(fiber.Map{
 			"status":   "up",
-			"database": "connected",
+			"database": dbStatus,
 		})
 	})
 
@@ -138,7 +166,7 @@ func main() {
 		},
 	}))
 	auth.Post("/login", authHandler.Login)
-	auth.Post("/register", authHandler.Register)
+	// Registration disabled — user creation is admin-only via POST /api/v1/admin/users
 
 	// Attendance Endpoints
 	attendance := api.Group("/attendance", middleware.JWTAuth(cfg))
@@ -158,23 +186,23 @@ func main() {
 	
 	// Read-Only (Admin, Manager, Supervisor)
 	ro := admin.Group("/", middleware.RoleCheck("admin", "manager", "supervisor"))
-	ro.Get("/centers", adminHandler.ListCenters)
-	ro.Get("/centers/:id/details", adminHandler.GetCenterDetails)
-	ro.Get("/shifts", adminHandler.ListShifts)
-	ro.Get("/shifts/:id/details", adminHandler.GetShiftDetails)
-	ro.Get("/positions", adminHandler.ListPositions)
-	ro.Get("/positions/:id/details", adminHandler.GetPositionDetails)
-	ro.Get("/employees", adminHandler.ListEmployees)
-	ro.Get("/employees/:id/details", adminHandler.GetEmployeeDetails)
-	ro.Get("/holidays", adminHandler.ListHolidays)
-	ro.Get("/managers", adminHandler.ListManagers)
-	ro.Get("/users/unassigned", adminHandler.ListUnassignedUsers)
-	ro.Get("/attendances", adminHandler.ListAttendances)
-	ro.Get("/attendances/:id/details", adminHandler.GetAttendanceDetails)
-	ro.Get("/attendances/export/csv", adminHandler.ExportAttendancesCSV)
-	ro.Get("/attendances/export/pdf", adminHandler.ExportAttendancesPDF)
-	ro.Post("/attendances/:id/recalculate", adminHandler.RecalculateIncidents)
-	ro.Delete("/attendances/:id", adminHandler.DeleteAttendance)
+	ro.Get("/centers", centerHandler.ListCenters)
+	ro.Get("/centers/:id/details", centerHandler.GetCenterDetails)
+	ro.Get("/shifts", shiftHandler.ListShifts)
+	ro.Get("/shifts/:id/details", shiftHandler.GetShiftDetails)
+	ro.Get("/positions", positionHandler.ListPositions)
+	ro.Get("/positions/:id/details", positionHandler.GetPositionDetails)
+	ro.Get("/employees", employeeHandler.ListEmployees)
+	ro.Get("/employees/:id/details", employeeHandler.GetEmployeeDetails)
+	ro.Get("/holidays", holidayHandler.ListHolidays)
+	ro.Get("/managers", employeeHandler.ListManagers)
+	ro.Get("/users/unassigned", employeeHandler.ListUnassignedUsers)
+	ro.Get("/attendances", attAdminHandler.ListAttendances)
+	ro.Get("/attendances/:id/details", attAdminHandler.GetAttendanceDetails)
+	ro.Get("/attendances/export/csv", exportHandler.ExportAttendancesCSV)
+	ro.Get("/attendances/export/pdf", exportHandler.ExportAttendancesPDF)
+	ro.Post("/attendances/:id/recalculate", attAdminHandler.RecalculateIncidents)
+	ro.Delete("/attendances/:id", attAdminHandler.DeleteAttendance)
 	ro.Get("/reports", reportHandler.ListReports)
 	ro.Get("/reports/details", reportHandler.GetReportDetails)
 	ro.Get("/reports/jobs", reportHandler.ListReportJobs)
@@ -185,34 +213,34 @@ func main() {
 	ro.Post("/justifications/:id/resolve", adminHandler.ResolveJustification)
 	ro.Get("/reports/:id/export", reportHandler.DownloadIndividualReport)
 	ro.Get("/reports/export", reportHandler.DownloadBatchReport)
-	ro.Get("/stats", adminHandler.GetDashboardStats)
-	ro.Get("/dashboard/compliance", adminHandler.GetComplianceDashboard)
+	ro.Get("/stats", dashboardHandler.GetDashboardStats)
+	ro.Get("/dashboard/compliance", dashboardHandler.GetComplianceDashboard)
 	ro.Get("/audit-logs", adminHandler.ListAuditLogs)
-	ro.Get("/incidents", adminHandler.ListIncidents)
+	ro.Get("/incidents", incidentHandler.ListIncidents)
 
 	// Range deletion for reports (Admin/Manager check depending on logic, but currently in ro if it's read-only? No, deletion is RW)
 
 	// Write Actions (Admin Only)
 	rw := admin.Group("/", middleware.RoleCheck("admin"))
-	rw.Post("/centers", adminHandler.CreateCenter)
-	rw.Put("/centers/:id", adminHandler.UpdateCenter)
-	rw.Delete("/centers/:id", adminHandler.DeleteCenter)
+	rw.Post("/centers", centerHandler.CreateCenter)
+	rw.Put("/centers/:id", centerHandler.UpdateCenter)
+	rw.Delete("/centers/:id", centerHandler.DeleteCenter)
 
-	rw.Post("/shifts", adminHandler.CreateShift)
-	rw.Put("/shifts/:id", adminHandler.UpdateShift)
-	rw.Delete("/shifts/:id", adminHandler.DeleteShift)
+	rw.Post("/shifts", shiftHandler.CreateShift)
+	rw.Put("/shifts/:id", shiftHandler.UpdateShift)
+	rw.Delete("/shifts/:id", shiftHandler.DeleteShift)
 
-	rw.Post("/positions", adminHandler.CreatePosition)
-	rw.Put("/positions/:id", adminHandler.UpdatePosition)
-	rw.Delete("/positions/:id", adminHandler.DeletePosition)
+	rw.Post("/positions", positionHandler.CreatePosition)
+	rw.Put("/positions/:id", positionHandler.UpdatePosition)
+	rw.Delete("/positions/:id", positionHandler.DeletePosition)
 
-	rw.Post("/employees", adminHandler.CreateEmployee)
-	rw.Put("/employees/:id", adminHandler.UpdateEmployee)
-	rw.Delete("/employees/:id", adminHandler.DeleteEmployee)
+	rw.Post("/employees", employeeHandler.CreateEmployee)
+	rw.Put("/employees/:id", employeeHandler.UpdateEmployee)
+	rw.Delete("/employees/:id", employeeHandler.DeleteEmployee)
 
-	rw.Post("/holidays", adminHandler.CreateHoliday)
-	rw.Put("/holidays/:id", adminHandler.UpdateHoliday)
-	rw.Delete("/holidays/:id", adminHandler.DeleteHoliday)
+	rw.Post("/holidays", holidayHandler.CreateHoliday)
+	rw.Put("/holidays/:id", holidayHandler.UpdateHoliday)
+	rw.Delete("/holidays/:id", holidayHandler.DeleteHoliday)
 
 	rw.Post("/reports/generate", reportHandler.GenerateFullReport)
 	rw.Delete("/reports", reportHandler.DeleteReports)
@@ -220,15 +248,15 @@ func main() {
 	rw.Post("/utils/parse-maps-url", utilsHandler.ParseMapsURL)
 	rw.Get("/utils/detect-timezone", utilsHandler.DetectTimezone)
 
-	rw.Put("/attendances/:id", adminHandler.UpdateAttendance)
-	rw.Patch("/incidents/:id", adminHandler.UpdateIncidentStatus)
+	rw.Put("/attendances/:id", attAdminHandler.UpdateAttendance)
+	rw.Patch("/incidents/:id", incidentHandler.UpdateIncidentStatus)
 
 	// Bulk Actions
 	bulk := admin.Group("/bulk", middleware.RoleCheck("admin"))
-	bulk.Post("/employees/update", adminHandler.BulkUpdateEmployees)
-	bulk.Post("/employees/delete", adminHandler.BulkDeleteEmployees)
-	bulk.Post("/attendances/justify", adminHandler.BulkJustifyAttendances)
-	bulk.Post("/incidents/justify", adminHandler.BulkJustifyIncidents)
+	bulk.Post("/employees/update", bulkHandler.BulkUpdateEmployees)
+	bulk.Post("/employees/delete", bulkHandler.BulkDeleteEmployees)
+	bulk.Post("/attendances/justify", bulkHandler.BulkJustifyAttendances)
+	bulk.Post("/incidents/justify", bulkHandler.BulkJustifyIncidents)
 
 	// Manager Endpoints (admin & manager)
 	manager := api.Group("/manager", middleware.JWTAuth(cfg), middleware.RoleCheck("admin", "manager"))

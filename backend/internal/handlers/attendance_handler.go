@@ -209,7 +209,7 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 
 	// 4. Create Geofence Incident if necessary (Skip for field shifts)
 	if shift.ShiftType != "field" {
-		err = h.Service.CreateGeofenceIncident(tx, emp.ID, center.ID, attendance.ID, req.Latitude, req.Longitude, center, "check-in")
+		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, attendance.ID, req.Latitude, req.Longitude, center, "check-in")
 		if err != nil {
 			tx.Rollback()
 			return utils.SendError(c, fiber.StatusInternalServerError, "Error creating geofence incident", err)
@@ -286,7 +286,7 @@ func (h *AttendanceHandler) CheckOutNoID(c *fiber.Ctx) error {
 
 	// 1. Geofence Validation for Check-Out (Skip for field shifts)
 	if shift.ShiftType != "field" {
-		err = h.Service.CreateGeofenceIncident(tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "check-out")
+		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "check-out")
 		if err != nil {
 			tx.Rollback()
 			return utils.SendError(c, fiber.StatusInternalServerError, "Error creating checkout incident", err)
@@ -309,7 +309,7 @@ func (h *AttendanceHandler) CheckOutNoID(c *fiber.Ctx) error {
 	}
 
 	// 3. Auto-detect and Recalculate (Transactional)
-	if err := h.Service.AutoDetectIncidentsTx(tx, att.ID); err != nil {
+	if err := h.Service.AutoDetectIncidents(c.Context(), tx, att.ID); err != nil {
 		tx.Rollback()
 		return utils.SendError(c, fiber.StatusInternalServerError, "Error calculating session totals", err)
 	}
@@ -371,7 +371,7 @@ func (h *AttendanceHandler) CheckOut(c *fiber.Ctx) error {
 
 	// Geofence Validation (Skip for field shifts)
 	if req.Latitude != 0 && req.Longitude != 0 && shift.ShiftType != "field" {
-		err = h.Service.CreateGeofenceIncident(tx, att.EmployeeID, center.ID, att.ID, req.Latitude, req.Longitude, center, "check-out-manual")
+		err = h.Service.CreateGeofenceIncident(c.Context(), tx, att.EmployeeID, center.ID, att.ID, req.Latitude, req.Longitude, center, "check-out-manual")
 		if err != nil {
 			tx.Rollback()
 			return utils.SendError(c, fiber.StatusInternalServerError, "Error creating geofence incident", err)
@@ -397,7 +397,7 @@ func (h *AttendanceHandler) CheckOut(c *fiber.Ctx) error {
 	}
 
 	// 4. Auto-detect and Recalculate everything (Transactional)
-	if err := h.Service.AutoDetectIncidentsTx(tx, att.ID); err != nil {
+	if err := h.Service.AutoDetectIncidents(c.Context(), tx, att.ID); err != nil {
 		tx.Rollback()
 		return utils.SendError(c, fiber.StatusInternalServerError, "Error calculating session totals", err)
 	}
@@ -469,7 +469,7 @@ func (h *AttendanceHandler) LunchStart(c *fiber.Ctx) error {
 
 	// 3. Create Geofence Incident if necessary (Skip for field shifts)
 	if shift.ShiftType != "field" {
-		err = h.Service.CreateGeofenceIncident(tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "lunch-start")
+		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "lunch-start")
 		if err != nil {
 			tx.Rollback()
 			return utils.SendError(c, fiber.StatusInternalServerError, "Error creating lunch incident", err)
@@ -537,7 +537,7 @@ func (h *AttendanceHandler) LunchEnd(c *fiber.Ctx) error {
 
 	// 3. Create Geofence Incident if necessary (Skip for field shifts)
 	if shift.ShiftType != "field" {
-		err = h.Service.CreateGeofenceIncident(tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "lunch-end")
+		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "lunch-end")
 		if err != nil {
 			tx.Rollback()
 			return utils.SendError(c, fiber.StatusInternalServerError, "Error creating lunch incident", err)
@@ -545,7 +545,7 @@ func (h *AttendanceHandler) LunchEnd(c *fiber.Ctx) error {
 	}
 
 	// 4. Auto-detect incidents (Lunch Overstay) and Recalculate financial data
-	if err := h.Service.AutoDetectIncidentsTx(tx, att.ID); err != nil {
+	if err := h.Service.AutoDetectIncidents(c.Context(), tx, att.ID); err != nil {
 		tx.Rollback()
 		return utils.SendError(c, fiber.StatusInternalServerError, "Error recalculating attendance", err)
 	}
@@ -685,7 +685,7 @@ func (h *AttendanceHandler) GetTodayStatus(c *fiber.Ctx) error {
 
 	if err != nil {
 		if err.Error() != "sql: no rows in result set" {
-			fmt.Printf("[DEBUG] GetTodayStatus Error for user %d (emp %d): %v\n", userID, employee.ID, err)
+			utils.GetLogger().Error("GetTodayStatus Error", zap.Int("user_id", userID), zap.Int("employee_id", employee.ID), zap.Error(err))
 		}
 		return c.JSON(fiber.Map{
 			"is_employee":   true,
@@ -741,7 +741,7 @@ func (h *AttendanceHandler) GetTodayStatus(c *fiber.Ctx) error {
 			if timezone == "" { timezone = "America/Mexico_City" }
 			loc, err := time.LoadLocation(timezone)
 			if err != nil {
-				fmt.Printf("DEBUG: Failed to load location %s: %v\n", timezone, err)
+				utils.GetLogger().Error("Failed to load location", zap.String("timezone", timezone), zap.Error(err))
 				loc = time.UTC
 			}
 			
@@ -811,7 +811,7 @@ func (h *AttendanceHandler) SubmitJustification(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Employee profile not found"})
 	}
 
-	if err := h.JustificationService.CreateJustification(req.IncidentID, emp.ID, req.Message, req.EvidenceURL); err != nil {
+	if err := h.JustificationService.CreateJustification(c.Context(), nil, req.IncidentID, emp.ID, req.Message, req.EvidenceURL); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 

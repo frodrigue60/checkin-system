@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -54,7 +55,7 @@ func TestJustificationService_CreateJustification(t *testing.T) {
 
 		mock.ExpectCommit()
 
-		err := s.CreateJustification(incidentID, employeeID, message, nil)
+		err := s.CreateJustification(context.Background(), nil, incidentID, employeeID, message, nil)
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -67,7 +68,7 @@ func TestJustificationService_CreateJustification(t *testing.T) {
 
 		mock.ExpectRollback()
 
-		err := s.CreateJustification(1, 10, "msg", nil)
+		err := s.CreateJustification(context.Background(), nil, 1, 10, "msg", nil)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "incidente no encontrado")
 		assert.NoError(t, mock.ExpectationsWereMet())

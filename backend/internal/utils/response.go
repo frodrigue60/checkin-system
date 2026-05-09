@@ -8,7 +8,7 @@ import (
 // SendError centraliza el manejo de errores para evitar fugas de información.
 func SendError(c *fiber.Ctx, code int, message string, err error) error {
 	if err != nil {
-		Logger.Error(message, 
+		GetLogger().Error(message, 
 			zap.Error(err),
 			zap.String("path", c.Path()),
 			zap.String("method", c.Method()),

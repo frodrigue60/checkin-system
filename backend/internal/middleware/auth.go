@@ -38,9 +38,18 @@ func JWTAuth(cfg *config.Config) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token claims"})
 		}
 
-		// Store user_id, role_id, and role_slug in locals for handlers to use
-		c.Locals("user_id", int(claims["user_id"].(float64)))
-		c.Locals("role_id", int(claims["role_id"].(float64)))
+		// Defensive type assertions — prevent panics from malformed tokens
+		userIDFloat, ok := claims["user_id"].(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token: missing user_id"})
+		}
+		roleIDFloat, ok := claims["role_id"].(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token: missing role_id"})
+		}
+
+		c.Locals("user_id", int(userIDFloat))
+		c.Locals("role_id", int(roleIDFloat))
 		if roleSlug, ok := claims["role_slug"].(string); ok {
 			c.Locals("role_slug", roleSlug)
 		}
