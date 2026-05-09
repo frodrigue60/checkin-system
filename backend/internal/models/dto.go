@@ -9,6 +9,7 @@ type UserDTO struct {
 	Email     string  `json:"email"`
 	Phone     *string `json:"phone"`
 	RoleID    int     `json:"role_id"`
+	PhotoURL  *string `json:"photo_url"`
 	CreatedAt string  `json:"created_at"`
 }
 
@@ -152,6 +153,7 @@ type EmployeeDetailDTO struct {
 	ShiftName    *string `json:"shift_name"`
 	PositionName string  `json:"position_name"`
 	HourlyRate   float64 `json:"hourly_rate"`
+	PhotoURL     *string `json:"photo_url"`
 }
 
 
@@ -201,19 +203,29 @@ type PaginatedResponse struct {
 	TotalPages int         `json:"total_pages"`
 }
 
+// JustificationDTO for incident evidence
+type JustificationDTO struct {
+	ID          int     `json:"id"`
+	Message     string  `json:"message"`
+	EvidenceURL *string `json:"evidence_url"`
+	Status      string  `json:"status"`
+	CreatedAt   string  `json:"created_at"`
+}
+
 // IncidentDTO for rich infraction logs
 type IncidentDTO struct {
-	ID           int       `json:"id"`
-	Type         string    `json:"type"`
-	IsLate       bool      `json:"is_late"`
-	DelayMinutes int       `json:"delay_minutes"`
-	IsOutOfRange bool      `json:"is_out_of_range"`
-	Distance     int       `json:"distance"`
-	Status       string    `json:"status"`
-	ResolvedBy   *int      `json:"resolved_by"`
-	ResolutionNote *string `json:"resolution_note"`
-	MetadataJSON *string   `json:"metadata"`
-	CreatedAt    *time.Time `json:"created_at"`
+	ID             int               `json:"id"`
+	Type           string            `json:"type"`
+	IsLate         bool              `json:"is_late"`
+	DelayMinutes   int               `json:"delay_minutes"`
+	IsOutOfRange   bool              `json:"is_out_of_range"`
+	Distance       int               `json:"distance"`
+	Status         string            `json:"status"`
+	ResolvedBy     *int              `json:"resolved_by"`
+	ResolutionNote *string           `json:"resolution_note"`
+	MetadataJSON   *string           `json:"metadata"`
+	CreatedAt      *time.Time        `json:"created_at"`
+	Justification  *JustificationDTO `json:"justification,omitempty"`
 }
 
 // AttendanceFullDetailDTO for the individual tracking audit view

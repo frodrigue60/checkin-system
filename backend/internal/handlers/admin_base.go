@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"attendance-api/internal/config"
 	"attendance-api/internal/services"
 
 	"github.com/jmoiron/sqlx"
@@ -12,6 +13,7 @@ import (
 // SOLID (D): handlers depend on this struct, injected from main.go.
 type AdminBase struct {
 	DB                   *sqlx.DB
+	Cfg                  *config.Config
 	PDFService           *services.PDFService
 	AttendanceService    *services.AttendanceService
 	AuditService         *services.AuditService

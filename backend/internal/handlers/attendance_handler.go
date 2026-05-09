@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"attendance-api/internal/config"
 	"attendance-api/internal/models"
 	"attendance-api/internal/services"
 	"attendance-api/internal/utils"
@@ -16,6 +17,7 @@ import (
 
 type AttendanceHandler struct {
 	DB                   *sqlx.DB
+	Cfg                  *config.Config
 	Service              *services.AttendanceService
 	JustificationService *services.JustificationService
 }
@@ -243,7 +245,7 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":    "Check-in successful",
-		"attendance": models.MapAttendanceToDTO(updatedAtt),
+		"attendance": models.MapAttendanceToDTO(updatedAtt, h.Cfg.R2PublicURL),
 	})
 }
 
@@ -331,7 +333,7 @@ func (h *AttendanceHandler) CheckOutNoID(c *fiber.Ctx) error {
 		"message":    "Check-out successful",
 		"hours":      updatedAtt.NetHoursWorked,
 		"earnings":   updatedAtt.DailyEarnings,
-		"attendance": models.MapAttendanceToDTO(updatedAtt),
+		"attendance": models.MapAttendanceToDTO(updatedAtt, h.Cfg.R2PublicURL),
 	})
 }
 
@@ -419,7 +421,7 @@ func (h *AttendanceHandler) CheckOut(c *fiber.Ctx) error {
 		"message":    "Check-out successful",
 		"hours":      updatedAtt.NetHoursWorked,
 		"earnings":   updatedAtt.DailyEarnings,
-		"attendance": models.MapAttendanceToDTO(updatedAtt),
+		"attendance": models.MapAttendanceToDTO(updatedAtt, h.Cfg.R2PublicURL),
 	})
 }
 
@@ -491,7 +493,7 @@ func (h *AttendanceHandler) LunchStart(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message":    "Lunch started",
-		"attendance": models.MapAttendanceToDTO(updatedAtt),
+		"attendance": models.MapAttendanceToDTO(updatedAtt, h.Cfg.R2PublicURL),
 	})
 }
 
@@ -565,7 +567,7 @@ func (h *AttendanceHandler) LunchEnd(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message":    "Lunch ended",
-		"attendance": models.MapAttendanceToDTO(updatedAtt),
+		"attendance": models.MapAttendanceToDTO(updatedAtt, h.Cfg.R2PublicURL),
 	})
 }
 
@@ -659,7 +661,7 @@ func (h *AttendanceHandler) ReportAbsence(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":    "Absence reported successfully",
-		"attendance": models.MapAttendanceToDTO(updatedAtt),
+		"attendance": models.MapAttendanceToDTO(updatedAtt, h.Cfg.R2PublicURL),
 	})
 }
 
@@ -785,7 +787,7 @@ func (h *AttendanceHandler) GetTodayStatus(c *fiber.Ctx) error {
 
 	historyDTOs := make([]models.AttendanceDTO, 0)
 	for _, h_item := range history {
-		historyDTOs = append(historyDTOs, models.MapAttendanceToDTO(h_item))
+		historyDTOs = append(historyDTOs, models.MapAttendanceToDTO(h_item, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(fiber.Map{
@@ -794,7 +796,7 @@ func (h *AttendanceHandler) GetTodayStatus(c *fiber.Ctx) error {
 		"is_active":         employee.IsActive,
 		"is_incomplete":     employee.WorkCenterID == 0 || employee.PositionID == 0,
 		"incomplete_reason": incompleteReason,
-		"attendance":        models.MapAttendanceToDTO(attendance),
+		"attendance":        models.MapAttendanceToDTO(attendance, h.Cfg.R2PublicURL),
 		"history":           historyDTOs,
 		"shift":             shift,
 		"center":            center,

@@ -1,4 +1,5 @@
 package models
+// Triggering rebuild - 2026-05-09
 
 import (
 	"encoding/json"
@@ -28,6 +29,7 @@ type User struct {
 	Password        string     `db:"password" json:"-"`
 	RememberToken   *string    `db:"remember_token" json:"remember_token"`
 	RoleID          int        `db:"role_id" json:"role_id"`
+	PhotoURL        *string    `db:"photo_url" json:"photo_url"`
 	CreatedAt       *time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt       *time.Time `db:"updated_at" json:"updated_at"`
 }
@@ -235,6 +237,8 @@ type ReportJob struct {
 	ErrorMessage     *string   `db:"error_message" json:"error_message"`
 	CreatedAt        time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
+	PDFURL           *string   `db:"pdf_url" json:"pdf_url"`
+	ExcelURL         *string   `db:"excel_url" json:"excel_url"`
 }
 
 type ReportJobDTO struct {
@@ -246,4 +250,6 @@ type ReportJobDTO struct {
 	StartDate        string `json:"start_date"`
 	EndDate          string `json:"end_date"`
 	CreatedAt        string `json:"created_at"`
+	PDFURL           *string `json:"pdf_url"`
+	ExcelURL         *string `json:"excel_url"`
 }

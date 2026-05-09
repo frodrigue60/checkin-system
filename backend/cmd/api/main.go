@@ -18,6 +18,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
 	"github.com/patrickmn/go-cache"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -69,6 +70,20 @@ func main() {
 		AttendanceService: attendanceService,
 	}
 
+	// Initialize Storage Service (R2)
+	var storageService services.StorageService
+	if cfg.R2AccountID != "" {
+		r2, err := services.NewR2StorageService(cfg)
+		if err != nil {
+			utils.Logger.Error("Failed to initialize R2 storage service", zap.Error(err))
+		} else {
+			storageService = r2
+			utils.Logger.Info("R2 Storage Service initialized successfully")
+		}
+	}
+
+	uploadHandler := &handlers.UploadHandler{Storage: storageService}
+
 	adminHandler := &handlers.AdminHandler{
 		DB:                   db,
 		PDFService:           pdfService,
@@ -83,6 +98,7 @@ func main() {
 	// Domain-specific handlers — SOLID (S): each handles one entity type
 	base := handlers.AdminBase{
 		DB:                   db,
+		Cfg:                  cfg,
 		PDFService:           pdfService,
 		AttendanceService:    attendanceService,
 		AuditService:         auditService,
@@ -104,12 +120,21 @@ func main() {
 
 	attendanceHandler := &handlers.AttendanceHandler{
 		DB:                   db,
+		Cfg:                  cfg,
 		Service:              attendanceService,
 		JustificationService: justificationService,
 	}
+	excelService := services.NewExcelService()
 	managerHandler := &handlers.ManagerHandler{DB: db}
-	reportHandler := &handlers.ReportHandler{DB: db, PDFService: pdfService, AuditService: auditService}
-	userHandler := &handlers.UserHandler{DB: db}
+	reportHandler := &handlers.ReportHandler{
+		DB:           db,
+		Cfg:          cfg,
+		PDFService:   pdfService,
+		ExcelService: excelService,
+		Storage:      storageService,
+		AuditService: auditService,
+	}
+	userHandler := &handlers.UserHandler{DB: db, Cfg: cfg, Storage: storageService}
 	utilsHandler := &handlers.UtilsHandler{}
 
 	// 3.1 Initialize Background Workers
@@ -179,6 +204,7 @@ func main() {
 	attendance.Post("/lunch-end", attendanceHandler.LunchEnd)
 	attendance.Post("/report-absence", attendanceHandler.ReportAbsence)
 	attendance.Post("/justify", attendanceHandler.SubmitJustification)
+	attendance.Post("/upload", uploadHandler.UploadAttendanceEvidence)
 
 
 	// Admin Root Group
@@ -270,7 +296,13 @@ func main() {
 	user.Get("/history", userHandler.GetAttendanceHistory)
 	user.Get("/profile", userHandler.GetProfile)
 	user.Put("/profile", userHandler.UpdateProfile)
+	user.Get("/avatar/upload-url", userHandler.GetAvatarUploadURL)
+	user.Post("/avatar/confirm", userHandler.ConfirmAvatarUpdate)
 
 	// Start Server
 	log.Fatal(app.Listen(":" + cfg.Port))
 }
+ 
+ 
+ 
+ 

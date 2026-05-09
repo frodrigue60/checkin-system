@@ -195,7 +195,7 @@ func (h *IncidentHandler) ListIncidents(c *fiber.Ctx) error {
 
 	dtos := []models.IncidentRichDTO{}
 	for _, r := range records {
-		dtos = append(dtos, models.MapIncidentToRichDTO(r.Incident, r.EmployeeName, r.AttendanceDate, r.CenterName))
+		dtos = append(dtos, models.MapIncidentToRichDTO(r.Incident, r.EmployeeName, r.AttendanceDate, r.CenterName, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(models.PaginatedResponse{

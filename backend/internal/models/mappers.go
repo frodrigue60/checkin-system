@@ -2,21 +2,37 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 )
 
 // MapUserToDTO converts a User entity to a clean DTO
-func MapUserToDTO(u User) UserDTO {
+func MapUserToDTO(u User, pubURL string) UserDTO {
+	formatURL := func(urlStr string) string {
+		if urlStr == "" { return "" }
+		if strings.HasPrefix(urlStr, "http") { return urlStr }
+		return fmt.Sprintf("%s/%s", strings.TrimSuffix(pubURL, "/"), strings.TrimPrefix(urlStr, "/"))
+	}
+
 	createdAt := ""
 	if u.CreatedAt != nil {
 		createdAt = u.CreatedAt.Format(time.RFC3339)
 	}
+
+	var photoURL *string
+	if u.PhotoURL != nil {
+		formatted := formatURL(*u.PhotoURL)
+		photoURL = &formatted
+	}
+
 	return UserDTO{
 		ID:        u.ID,
 		Name:      u.Name,
 		Email:     u.Email,
 		Phone:     u.Phone,
 		RoleID:    u.RoleID,
+		PhotoURL:  photoURL,
 		CreatedAt: createdAt,
 	}
 }
@@ -34,7 +50,7 @@ func MapEmployeeToDTO(e Employee) EmployeeDTO {
 }
 
 // MapAttendanceToDTO converts Attendance entity to DTO
-func MapAttendanceToDTO(a Attendance) AttendanceDTO {
+func MapAttendanceToDTO(a Attendance, pubURL string) AttendanceDTO {
 	dateStr := ""
 	if a.CheckIn != nil && !a.CheckIn.IsZero() {
 		dateStr = a.CheckIn.Format("2006-01-02")
@@ -58,6 +74,24 @@ func MapAttendanceToDTO(a Attendance) AttendanceDTO {
 		evs = []string{}
 	}
 
+	// Helper to format URLs
+	formatURL := func(u string) string {
+		if u == "" { return "" }
+		if strings.HasPrefix(u, "http") { return u }
+		res := fmt.Sprintf("%s/%s", strings.TrimSuffix(pubURL, "/"), strings.TrimPrefix(u, "/"))
+		return res
+	}
+
+	evidenceURL := ""
+	if a.EvidenceURL != nil {
+		evidenceURL = formatURL(*a.EvidenceURL)
+	}
+
+	formattedEvs := make([]string, len(evs))
+	for i, u := range evs {
+		formattedEvs[i] = formatURL(u)
+	}
+
 	return AttendanceDTO{
 		ID:                a.ID,
 		EmployeeID:        a.EmployeeID,
@@ -74,19 +108,19 @@ func MapAttendanceToDTO(a Attendance) AttendanceDTO {
 		CheckOutLongitude: a.CheckOutLongitude,
 		IsAbsence:         a.IsAbsence,
 		AbsenceReason:     a.AbsenceReason,
-		EvidenceURL:       a.EvidenceURL,
+		EvidenceURL:       &evidenceURL,
 		CheckOutNote:      a.CheckOutNote,
 		CheckInAddress:    a.CheckInAddress,
 		CheckInNote:       a.CheckInNote,
 		CheckOutAddress:   a.CheckOutAddress,
 		IsFieldWork:       a.IsFieldWork,
-		EvidenceURLs:      evs,
+		EvidenceURLs:      formattedEvs,
 	}
 }
 
 // MapAttendanceToDetailDTO is used for rich administrative logs
-func MapAttendanceToDetailDTO(a Attendance, empName, centerName, posName string, isLate bool) AttendanceDetailDTO {
-	dto := MapAttendanceToDTO(a)
+func MapAttendanceToDetailDTO(a Attendance, empName, centerName, posName string, isLate bool, pubURL string) AttendanceDetailDTO {
+	dto := MapAttendanceToDTO(a, pubURL)
 	return AttendanceDetailDTO{
 		ID:                dto.ID,
 		EmployeeID:        dto.EmployeeID,
@@ -107,7 +141,7 @@ func MapAttendanceToDetailDTO(a Attendance, empName, centerName, posName string,
 		WorkCenterName:    centerName,
 		PositionName:      posName,
 		IsLate:            isLate,
-		EvidenceURL:       a.EvidenceURL,
+		EvidenceURL:       dto.EvidenceURL,
 		CheckOutNote:      a.CheckOutNote,
 		CheckInAddress:    a.CheckInAddress,
 		CheckInNote:       a.CheckInNote,
@@ -204,9 +238,29 @@ func MapHolidayToDTO(h Holiday) HolidayDTO {
 	}
 }
 
+// MapJustificationToDTO converts Justification entity to DTO
+func MapJustificationToDTO(j Justification, pubURL string) JustificationDTO {
+	evidenceURL := ""
+	if j.EvidenceURL != nil {
+		if strings.HasPrefix(*j.EvidenceURL, "http") {
+			evidenceURL = *j.EvidenceURL
+		} else {
+			evidenceURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(pubURL, "/"), strings.TrimPrefix(*j.EvidenceURL, "/"))
+		}
+	}
+
+	return JustificationDTO{
+		ID:          j.ID,
+		Message:     j.Message,
+		EvidenceURL: &evidenceURL,
+		Status:      j.Status,
+		CreatedAt:   j.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
 // MapIncidentToDTO converts Incident entity to DTO
-func MapIncidentToDTO(i Incident) IncidentDTO {
-	return IncidentDTO{
+func MapIncidentToDTO(i Incident, pubURL string) IncidentDTO {
+	dto := IncidentDTO{
 		ID:           i.ID,
 		Type:         i.Type,
 		IsLate:       i.IsLate,
@@ -219,10 +273,17 @@ func MapIncidentToDTO(i Incident) IncidentDTO {
 		MetadataJSON: i.MetadataJSON,
 		CreatedAt:    i.CreatedAt,
 	}
+
+	if i.Justification != nil {
+		jDTO := MapJustificationToDTO(*i.Justification, pubURL)
+		dto.Justification = &jDTO
+	}
+
+	return dto
 }
 
-func MapIncidentToRichDTO(i Incident, empName string, attDate string, centerName string) IncidentRichDTO {
-	dto := MapIncidentToDTO(i)
+func MapIncidentToRichDTO(i Incident, empName string, attDate string, centerName string, pubURL string) IncidentRichDTO {
+	dto := MapIncidentToDTO(i, pubURL)
 	return IncidentRichDTO{
 		IncidentDTO:    dto,
 		EmployeeName:   empName,
@@ -232,7 +293,22 @@ func MapIncidentToRichDTO(i Incident, empName string, attDate string, centerName
 	}
 }
 
-func MapReportJobToDTO(j ReportJob) ReportJobDTO {
+func MapReportJobToDTO(j ReportJob, pubURL string) ReportJobDTO {
+	formatURL := func(u string) string {
+		if u == "" { return "" }
+		if strings.HasPrefix(u, "http") { return u }
+		return fmt.Sprintf("%s/%s", strings.TrimSuffix(pubURL, "/"), strings.TrimPrefix(u, "/"))
+	}
+
+	pdfURL := ""
+	if j.PDFURL != nil {
+		pdfURL = formatURL(*j.PDFURL)
+	}
+	excelURL := ""
+	if j.ExcelURL != nil {
+		excelURL = formatURL(*j.ExcelURL)
+	}
+
 	return ReportJobDTO{
 		ID:               j.ID,
 		Status:           j.Status,
@@ -242,5 +318,7 @@ func MapReportJobToDTO(j ReportJob) ReportJobDTO {
 		StartDate:        j.StartDate.Format("2006-01-02"),
 		EndDate:          j.EndDate.Format("2006-01-02"),
 		CreatedAt:        j.CreatedAt.Format(time.RFC3339),
+		PDFURL:           &pdfURL,
+		ExcelURL:         &excelURL,
 	}
 }

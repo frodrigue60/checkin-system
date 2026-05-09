@@ -81,7 +81,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"token": t,
 		"user": fiber.Map{
-			"profile":     models.MapUserToDTO(user.User),
+			"profile":     models.MapUserToDTO(user.User, h.Cfg.R2PublicURL),
 			"role_slug":   user.RoleSlug,
 			"employee_id": employeeID,
 		},
@@ -158,7 +158,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		"message": "User registered successfully",
 		"token":   t,
 		"user": fiber.Map{
-			"profile":     models.MapUserToDTO(user.User),
+			"profile":     models.MapUserToDTO(user.User, h.Cfg.R2PublicURL),
 			"role_slug":   user.RoleSlug,
 			"employee_id": nil, // New users don't have an employee profile yet
 		},

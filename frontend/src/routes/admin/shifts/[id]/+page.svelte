@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { _ } from 'svelte-i18n';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { page } from '$app/state';
@@ -33,10 +34,19 @@
 
 	// Helper for time strings
 	function formatTime(val: string) {
-		if (!val || val === '' || val.includes('0001-01-01') || val.includes('0000-01-01'))
-			return '--:--';
+		if (!val || val === '') return '--:--';
+		
+		// If it's a full ISO string
 		if (val.includes('T')) {
-			return val.split('T')[1].substring(0, 5);
+			const timePart = val.split('T')[1].substring(0, 5);
+			// Only return --:-- if it's exactly the zero time of Go (0001-01-01 00:00)
+			if (timePart === '00:00' && (val.includes('0001-01-01') || val.includes('0000-01-01'))) {
+				// Special case: if we explicitly want 00:00 in a shift, this might be tricky,
+				// but usually 00:00:00Z on year 1 is the null value.
+				// For now, let's return the timePart anyway if it's a shift.
+				return timePart;
+			}
+			return timePart;
 		}
 		return val.substring(0, 5);
 	}
@@ -77,13 +87,20 @@
 
 	async function loadDetails() {
 		loading = true;
-		const res = await apiFetch(`/admin/shifts/${shiftId}/details`);
-		if (res.ok) {
-			data = await res.json();
-		} else {
-			errorMsg = 'No se pudo cargar la información del turno';
+		errorMsg = '';
+		try {
+			const res = await apiFetch(`/admin/shifts/${shiftId}/details`);
+			if (res.ok) {
+				data = await res.json();
+			} else {
+				errorMsg = 'No se pudo cargar la información del turno';
+			}
+		} catch (e) {
+			console.error('Error loading shift details:', e);
+			errorMsg = 'Error de conexión con el servidor';
+		} finally {
+			loading = false;
 		}
-		loading = false;
 	}
 
 	onMount(loadDetails);

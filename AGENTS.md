@@ -184,6 +184,16 @@ To maintain the architectural integrity of the JGC Check-in system, future modif
 - **Rule**: All list and paginated endpoints MUST return an empty array `[]` instead of `null` when no data is found.
 - **Go Pattern**: Initialize slices using literals: `logs := []models.AuditLog{}` instead of `var logs []models.AuditLog`. This ensures the JSON encoder produces `[]` instead of `null`.
 
+### 13. **Temporal Integrity & Legacy Handling**
+- **ISO 8601 UTC Standard**: ALL date and time data transmitted via API MUST use ISO 8601 strings in UTC format (e.g., `2026-05-09T14:30:00Z`).
+- **Legacy "Year 0" Awareness**: 
+    - **Backend**: Go's zero-time (`0001-01-01`) or SQL legacy dates (`0000-01-01`) are often used as placeholders for "Time-only" fields (like `WorkShift` start/end).
+    - **Frontend Parsing**: Never discard a timestamp just because it contains `0000` or `0001` years. Always extract the time component (`HH:mm`) unless the field is truly optional/null.
+- **Time-Only Extraction Rule**: When rendering shift schedules, ignore the date component. Use a robust helper like `formatTime` that gracefully handles `0001-01-01` by returning the time part while treating truly empty values as `--:--`.
+- **Arithmetic Safety**: 
+    - Always use PostgreSQL native interval arithmetic for durations (`check_out - check_in`).
+    - In Svelte, use dedicated helper functions (`timeToMinutes`, `calculateDuration`) to handle midnight-crossing shifts by adding `24 * 60` minutes when the end time is numerically lower than the start time.
+
 ---
 
 ## 🎨 Frontend & UI UX Guidelines

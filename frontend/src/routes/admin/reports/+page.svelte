@@ -73,31 +73,42 @@
 
 	async function loadReportRanges() {
 		loading = true;
-		const res = await apiFetch('/admin/reports');
-		if (res.ok) reportRanges = await res.json();
-		loading = false;
+		try {
+			const res = await apiFetch('/admin/reports');
+			if (res.ok) {
+				reportRanges = await res.json();
+			}
+		} catch (e) {
+			console.error('Error loading report ranges:', e);
+		} finally {
+			loading = false;
+		}
 	}
 
 	async function loadActiveJobs() {
-		const res = await apiFetch<ReportJobDTO[]>('/admin/reports/jobs');
-		if (res.ok) {
-			const previousJobs = activeJobs;
-			activeJobs = await res.json();
-			
-			// Detect completion to refresh the main list
-			const hasNewCompletion = activeJobs.some(job => 
-				job.status === 'completed' && 
-				!previousJobs.find(pj => pj.id === job.id && pj.status === 'completed')
-			);
+		try {
+			const res = await apiFetch<ReportJobDTO[]>('/admin/reports/jobs');
+			if (res.ok) {
+				const previousJobs = activeJobs;
+				activeJobs = await res.json();
+				
+				// Detect completion to refresh the main list
+				const hasNewCompletion = activeJobs.some(job => 
+					job.status === 'completed' && 
+					!previousJobs.find(pj => pj.id === job.id && pj.status === 'completed')
+				);
 
-			if (hasNewCompletion) {
-				await loadReportRanges();
-			}
+				if (hasNewCompletion) {
+					await loadReportRanges();
+				}
 
-			// If there are processing jobs, poll
-			if (activeJobs.some((j) => j.status === 'processing' || j.status === 'pending')) {
-				setTimeout(loadActiveJobs, 2000);
+				// If there are processing jobs, poll
+				if (activeJobs.some((j) => j.status === 'processing' || j.status === 'pending' || j.status === 'generating_files')) {
+					setTimeout(loadActiveJobs, 2000);
+				}
 			}
+		} catch (e) {
+			console.error('Error loading active jobs:', e);
 		}
 	}
 
@@ -110,34 +121,38 @@
 		}
 
 		generating = true;
-		const body: any = {
-			start_date: filter.startDate,
-			end_date: filter.endDate
-		};
+		try {
+			const body: any = {
+				start_date: filter.startDate,
+				end_date: filter.endDate
+			};
 
-		if (generationMode === 'individual') {
-			body.employee_id = parseInt(selectedEmployeeId);
-		} else {
-			if (selectedShiftId) body.work_shift_id = parseInt(selectedShiftId);
-			if (selectedPositionId) body.position_id = parseInt(selectedPositionId);
-			if (selectedCenterId) body.work_center_id = parseInt(selectedCenterId);
+			if (generationMode === 'individual') {
+				body.employee_id = parseInt(selectedEmployeeId);
+			} else {
+				if (selectedShiftId) body.work_shift_id = parseInt(selectedShiftId);
+				if (selectedPositionId) body.position_id = parseInt(selectedPositionId);
+				if (selectedCenterId) body.work_center_id = parseInt(selectedCenterId);
+			}
+
+			const res = await apiFetch('/admin/reports/generate', {
+				method: 'POST',
+				body: JSON.stringify(body)
+			});
+
+			if (res.ok) {
+				// Since it's async, we just start polling jobs
+				await loadActiveJobs();
+			} else {
+				const err = await res.json();
+				alert(err.error || $_('admin.reports.gen_error'));
+			}
+		} catch (e) {
+			console.error('Error generating report:', e);
+			alert($_('admin.reports.gen_error'));
+		} finally {
+			generating = false;
 		}
-
-		const res = await apiFetch('/admin/reports/generate', {
-			method: 'POST',
-			body: JSON.stringify(body)
-		});
-
-		if (res.ok) {
-			const data = await res.json();
-			// Since it's async, we just start polling jobs
-			await loadActiveJobs();
-			// alert("Generación iniciada en segundo plano");
-		} else {
-			const err = await res.json();
-			alert(err.error || $_('admin.reports.gen_error'));
-		}
-		generating = false;
 	}
 
 	async function downloadReport(start: string, end: string) {
@@ -424,20 +439,29 @@
 						{$_('admin.reports.notice')}
 					</p>
 				</div>
-
 				{#if activeJobs.length > 0}
 					<div class="space-y-4">
 						<h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
 							{$_('admin.reports.active_tasks')}
 						</h3>
 						<div class="space-y-3">
-							{#each activeJobs.filter(j => j.status === 'processing' || j.status === 'pending').slice(0, 5) as job (job.id)}
+							{#each activeJobs.slice(0, 5) as job (job.id)}
 								<div class="p-4 bg-white border rounded-sm shadow-sm flex items-center gap-4 group/job relative overflow-hidden">
-									<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary animate-pulse"></div>
+									{#if job.status === 'processing' || job.status === 'pending' || job.status === 'generating_files'}
+										<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary animate-pulse"></div>
+									{:else if job.status === 'completed'}
+										<div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+									{:else}
+										<div class="absolute left-0 top-0 bottom-0 w-1 bg-rose-500"></div>
+									{/if}
 									
 									<div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0 bg-slate-50 text-slate-400">
-										{#if job.status === 'processing'}
-											<Loader2 class="h-5 w-5 animate-spin" />
+										{#if job.status === 'processing' || job.status === 'generating_files'}
+											<Loader2 class="h-5 w-5 animate-spin text-primary" />
+										{:else if job.status === 'completed'}
+											<Rocket class="h-5 w-5 text-emerald-500" />
+										{:else if job.status === 'failed'}
+											<Info class="h-5 w-5 text-rose-500" />
 										{:else}
 											<Clock class="h-5 w-5" />
 										{/if}
@@ -448,31 +472,36 @@
 											<span class="text-[10px] font-black uppercase tracking-tight text-slate-700">
 												{job.start_date.split('T')[0]} — {job.end_date.split('T')[0]}
 											</span>
-											<span class="text-[10px] font-black text-primary">{job.progress}%</span>
+											{#if job.status === 'completed'}
+												<div class="flex gap-2">
+													{#if job.pdf_url}
+														<a href={job.pdf_url} target="_blank" class="text-primary hover:scale-110 transition-transform">
+															<FileText class="h-4 w-4" />
+														</a>
+													{/if}
+													{#if job.excel_url}
+														<a href={job.excel_url} target="_blank" class="text-emerald-600 hover:scale-110 transition-transform">
+															<FileDown class="h-4 w-4" />
+														</a>
+													{/if}
+												</div>
+											{:else}
+												<span class="text-[10px] font-black text-primary">{job.progress}%</span>
+											{/if}
 										</div>
 										
-										<div class="w-full h-1.5 bg-slate-50 rounded-full overflow-hidden">
-											<div 
-												class="h-full bg-primary transition-all duration-700 ease-out" 
-												style="width: {job.progress}%"
-											></div>
-										</div>
-									</div>
-								</div>
-							{/each}
-
-							{#each activeJobs.filter(j => j.status === 'failed').slice(0, 2) as job (job.id)}
-								<div class="p-4 bg-rose-50 border border-rose-100 rounded-sm shadow-sm flex items-center gap-4">
-									<div class="h-10 w-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
-										<Info class="h-5 w-5" />
-									</div>
-									<div class="flex-1 min-w-0">
-										<h4 class="text-[10px] font-black uppercase text-rose-900 tracking-tight">
-											{$_('common.error_saving')}
-										</h4>
-										<p class="text-[9px] text-rose-500 font-bold truncate">
-											{job.start_date.split('T')[0]} — {job.end_date.split('T')[0]}
-										</p>
+										{#if job.status !== 'completed' && job.status !== 'failed'}
+											<div class="w-full h-1.5 bg-slate-50 rounded-full overflow-hidden">
+												<div 
+													class="h-full bg-primary transition-all duration-700 ease-out" 
+													style="width: {job.progress}%"
+												></div>
+											</div>
+										{:else if job.status === 'failed'}
+											<p class="text-[9px] text-rose-500 font-bold truncate">Error en generación</p>
+										{:else}
+											<p class="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{$_('common.completed')}</p>
+										{/if}
 									</div>
 								</div>
 							{/each}

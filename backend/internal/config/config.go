@@ -15,6 +15,12 @@ type Config struct {
 	AllowedOrigins string
 	EnableSwagger  bool
 	SwaggerHost    string
+	// R2 Storage
+	R2AccountID       string
+	R2AccessKeyID     string
+	R2SecretAccessKey string
+	R2BucketName      string
+	R2PublicURL       string
 }
 
 func LoadConfig() *Config {
@@ -40,6 +46,12 @@ func LoadConfig() *Config {
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:5173"),
 		EnableSwagger:  getEnv("ENABLE_SWAGGER", "true") == "true",
 		SwaggerHost:    getEnv("SWAGGER_HOST", "localhost:3000"),
+		// R2 Storage (Optional in dev, required if used)
+		R2AccountID:       getEnv("R2_ACCOUNT_ID", ""),
+		R2AccessKeyID:     getEnv("R2_ACCESS_KEY_ID", ""),
+		R2SecretAccessKey: getEnv("R2_SECRET_ACCESS_KEY", ""),
+		R2BucketName:      getEnv("R2_BUCKET_NAME", ""),
+		R2PublicURL:       getEnv("R2_PUBLIC_URL", ""),
 	}
 }
 

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"attendance-api/internal/config"
 	"attendance-api/internal/models"
+	"attendance-api/internal/services"
 	"attendance-api/internal/utils"
 	"context"
 	"time"
@@ -11,8 +13,43 @@ import (
 )
 
 type UserHandler struct {
-	DB *sqlx.DB
+	DB      *sqlx.DB
+	Cfg     *config.Config
+	Storage services.StorageService
 }
+
+func (h *UserHandler) GetAvatarUploadURL(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(int)
+	fileName := c.Query("fileName", "avatar.jpg")
+
+	uploadURL, _, key, err := h.Storage.GetAvatarUploadURL(c.Context(), userID, fileName)
+	if err != nil {
+		return utils.SendError(c, fiber.StatusInternalServerError, "Could not generate upload URL", err)
+	}
+
+	return c.JSON(fiber.Map{
+		"uploadURL": uploadURL,
+		"key":       key,
+	})
+}
+
+func (h *UserHandler) ConfirmAvatarUpdate(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(int)
+	var req struct {
+		Key string `json:"key"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	_, err := h.DB.Exec("UPDATE users SET photo_url = $1, updated_at = NOW() WHERE id = $2", req.Key, userID)
+	if err != nil {
+		return utils.SendError(c, fiber.StatusInternalServerError, "Could not update profile photo", err)
+	}
+
+	return c.JSON(fiber.Map{"message": "Photo updated successfully"})
+}
+
 
 func (h *UserHandler) GetEmployeeStats(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int)
@@ -56,7 +93,7 @@ func (h *UserHandler) GetEmployeeStats(c *fiber.Ctx) error {
 
 	dtos := make([]models.AttendanceDTO, 0)
 	for _, a := range entities {
-		dtos = append(dtos, models.MapAttendanceToDTO(a))
+		dtos = append(dtos, models.MapAttendanceToDTO(a, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(fiber.Map{
@@ -196,12 +233,13 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 		EmployeeCreatedAt *time.Time `db:"employee_created_at" json:"employee_created_at"`
 		IsActive          *bool      `db:"is_active" json:"is_active"`
 		HourlyRate        *float64   `db:"hourly_rate" json:"hourly_rate"`
+		PhotoURL          *string    `db:"photo_url" json:"photo_url"`
 		IsEmployee        bool       `json:"is_employee"`
 	}
 
 	var profile ProfileData
 	query := `
-		SELECT u.id, u.name, u.email, u.phone, p.name as position_name, wc.name as work_center_name,
+		SELECT u.id, u.name, u.email, u.phone, u.photo_url, p.name as position_name, wc.name as work_center_name,
  		       ws.name as shift_name, ws.expected_check_in, ws.expected_check_out,
  		       e.created_at as employee_created_at, e.is_active, p.hourly_rate
  		FROM users u
@@ -217,6 +255,11 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	}
 
 	profile.IsEmployee = profile.EmployeeCreatedAt != nil
+
+	if profile.PhotoURL != nil {
+		fullURL := h.Storage.GetPublicURL(*profile.PhotoURL)
+		profile.PhotoURL = &fullURL
+	}
 
 	return c.JSON(profile)
 }

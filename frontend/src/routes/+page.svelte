@@ -37,6 +37,8 @@
 
 	let showEvidenceModal = $state(false);
 	let evidencePreviews = $state<string[]>([]);
+	let evidenceFiles = $state<File[]>([]);
+	let fileInput: HTMLInputElement;
 	let evidenceUploading = $state(false);
 	let serviceNote = $state('');
 	let stats = $derived.by(() => {
@@ -216,30 +218,47 @@
 
 		evidenceUploading = true;
 		try {
-			// Get position again for precision
-			const pos = await new Promise<GeolocationPosition>((res, rej) =>
-				navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true })
-			);
-
-			// Get address (Reverse Geocoding)
-			let address = '';
-			try {
-				const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`, {
-					headers: { 'Accept-Language': 'es' }
+			// 1. Get Presigned URLs from Backend
+			let finalUrls: string[] = [];
+			if (evidenceFiles.length > 0) {
+				const fileData = evidenceFiles.map(f => ({ name: f.name, type: f.type }));
+				
+				const uploadRes = await apiFetch<{ items: { upload_url: string, public_url: string, key: string, file_name: string }[] }>('/attendance/upload', {
+					method: 'POST',
+					body: JSON.stringify({ files: fileData })
 				});
-				const geoData = await geoRes.json();
-				address = geoData.display_name || '';
-			} catch (e) {
-				console.error("Geocoding failed", e);
+
+				if (!uploadRes.ok) {
+					const errData = await uploadRes.json();
+					throw new Error(errData.error || 'Failed to get upload permissions');
+				}
+				
+				const { items } = await uploadRes.json();
+
+				// 2. Upload directly to Cloudflare R2 using PUT
+				const uploadPromises = items.map(async (item, index) => {
+					const file = evidenceFiles[index];
+					const res = await fetch(item.upload_url, {
+						method: 'PUT',
+						body: file
+					});
+					if (!res.ok) throw new Error(`Failed to upload ${file.name}`);
+					return item.key;
+				});
+
+				finalUrls = await Promise.all(uploadPromises);
 			}
+
+			// Get position again for precision
+			const pos = await getCurrentLocation();
 
 			const body = {
 				employee_id: authState.user?.employee_id || authState.user?.id,
-				latitude: pos.coords.latitude,
-				longitude: pos.coords.longitude,
-				evidence_urls: evidencePreviews,
+				latitude: pos.latitude,
+				longitude: pos.longitude,
+				evidence_urls: finalUrls,
 				check_out_note: serviceNote,
-				address: address
+				address: "" 
 			};
 
 			const res = await apiFetch<{ attendance: Attendance }>(`/attendance/check-out`, {
@@ -254,6 +273,7 @@
 			todayAttendance = data.attendance;
 			showEvidenceModal = false;
 			evidencePreviews = [];
+			evidenceFiles = [];
 			serviceNote = '';
 			fetchTodayStatus();
 		} catch (err: any) {
@@ -264,19 +284,46 @@
 	}
 
 	function addEvidence() {
-		const placeholders = [
-			"https://images.unsplash.com/photo-1554469384-e58fac16e23a?q=80&w=687&auto=format&fit=crop",
-			"https://images.unsplash.com/photo-1504151932400-72d4384f04b3?q=80&w=1449&auto=format&fit=crop",
-			"https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?q=80&w=1470&auto=format&fit=crop",
-			"https://images.unsplash.com/photo-1541888941259-7904f1173727?q=80&w=1470&auto=format&fit=crop"
-		];
-		// Pick one that hasn't been used yet or just a random one
-		const nextUrl = placeholders[evidencePreviews.length % placeholders.length];
-		evidencePreviews = [...evidencePreviews, nextUrl];
+		fileInput?.click();
+	}
+
+	function handleFileChange(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!target.files) return;
+
+		const files = Array.from(target.files);
+		
+		for (const file of files) {
+			if (evidencePreviews.length >= 4) break;
+			
+			// Validate type
+			if (!file.type.startsWith('image/')) {
+				notifications.error(`${file.name} is not an image`);
+				continue;
+			}
+
+			// Max 5MB per image
+			if (file.size > 5 * 1024 * 1024) {
+				notifications.error(`${file.name} exceeds 5MB`);
+				continue;
+			}
+
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				const preview = e.target?.result as string;
+				evidencePreviews = [...evidencePreviews, preview];
+				evidenceFiles = [...evidenceFiles, file];
+			};
+			reader.readAsDataURL(file);
+		}
+		
+		// Reset input to allow selecting the same file again
+		target.value = '';
 	}
 
 	function removeEvidence(index: number) {
 		evidencePreviews = evidencePreviews.filter((_, i) => i !== index);
+		evidenceFiles = evidenceFiles.filter((_, i) => i !== index);
 	}
 
 	async function handleAbsenceConfirm(reason: string) {
@@ -793,6 +840,15 @@
 								<span class="text-[8px] font-black uppercase tracking-widest">{$_('dashboard.add_another_photo')}</span>
 							</button>
 						{/if}
+
+						<input
+							type="file"
+							accept="image/*"
+							multiple
+							class="hidden"
+							bind:this={fileInput}
+							onchange={handleFileChange}
+						/>
 					</div>
 				</div>
 

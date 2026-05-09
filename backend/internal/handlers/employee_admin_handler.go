@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"attendance-api/internal/models"
@@ -17,7 +19,7 @@ func (h *EmployeeAdminHandler) ListManagers(c *fiber.Ctx) error {
 
 	dtos := make([]models.UserDTO, 0)
 	for _, u := range entities {
-		dtos = append(dtos, models.MapUserToDTO(u))
+		dtos = append(dtos, models.MapUserToDTO(u, h.Cfg.R2PublicURL))
 	}
 	return c.JSON(dtos)
 }
@@ -35,7 +37,7 @@ func (h *EmployeeAdminHandler) ListUnassignedUsers(c *fiber.Ctx) error {
 
 	dtos := make([]models.UserDTO, 0)
 	for _, u := range entities {
-		dtos = append(dtos, models.MapUserToDTO(u))
+		dtos = append(dtos, models.MapUserToDTO(u, h.Cfg.R2PublicURL))
 	}
 	return c.JSON(dtos)
 }
@@ -51,6 +53,7 @@ func (h *EmployeeAdminHandler) ListEmployees(c *fiber.Ctx) error {
 		ShiftName    *string `db:"shift_name"`
 		PositionName string  `db:"position_name"`
 		HourlyRate   float64 `db:"hourly_rate"`
+		PhotoURL     *string `db:"photo_url"`
 	}
 
 	search := c.Query("search")
@@ -60,7 +63,7 @@ func (h *EmployeeAdminHandler) ListEmployees(c *fiber.Ctx) error {
 	shiftType := c.Query("shift_type")
 
 	query := `
-		SELECT e.*, u.name as user_name, u.email, u.phone, wc.name as center_name, ws.name as shift_name, p.name as position_name, p.hourly_rate
+		SELECT e.*, u.name as user_name, u.email, u.phone, u.photo_url, wc.name as center_name, ws.name as shift_name, p.name as position_name, p.hourly_rate
 		FROM employees e
 		JOIN users u ON e.user_id = u.id
 		JOIN work_centers wc ON e.work_center_id = wc.id
@@ -119,6 +122,11 @@ func (h *EmployeeAdminHandler) ListEmployees(c *fiber.Ctx) error {
 			ShiftName:    e.ShiftName,
 			PositionName: e.PositionName,
 			HourlyRate:   e.HourlyRate,
+			PhotoURL: func() *string {
+				if e.PhotoURL == nil { return nil }
+				url := fmt.Sprintf("%s/%s", strings.TrimSuffix(h.Cfg.R2PublicURL, "/"), strings.TrimPrefix(*e.PhotoURL, "/"))
+				return &url
+			}(),
 		})
 	}
 
@@ -341,7 +349,7 @@ func (h *EmployeeAdminHandler) GetEmployeeDetails(c *fiber.Ctx) error {
 
 	attDTOs := make([]models.AttendanceDetailDTO, 0)
 	for _, a := range attendances {
-		attDTOs = append(attDTOs, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, "", a.IsLate))
+		attDTOs = append(attDTOs, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, "", a.IsLate, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(models.EmployeeFullDetailDTO{

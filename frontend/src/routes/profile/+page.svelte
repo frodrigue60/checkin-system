@@ -55,6 +55,65 @@
 		loadProfile();
 	});
 
+	let uploadingAvatar = $state(false);
+	let fileInput = $state<HTMLInputElement | null>(null);
+
+	async function handleAvatarUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		// Validation
+		const MAX_SIZE = 6 * 1024 * 1024; // 6MB
+		const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+		if (!ALLOWED_TYPES.includes(file.type)) {
+			alert('Solo se permiten imágenes JPG, PNG o WEBP');
+			target.value = '';
+			return;
+		}
+
+		if (file.size > MAX_SIZE) {
+			alert('La imagen es demasiado grande. El límite es de 6MB');
+			target.value = '';
+			return;
+		}
+
+		uploadingAvatar = true;
+		try {
+			// 1. Get Presigned URL
+			const res = await apiFetch(`/user/avatar/upload-url?fileName=${encodeURIComponent(file.name)}`);
+			if (!res.ok) throw new Error('Failed to get upload URL');
+			const { uploadURL, key } = await res.json();
+
+			// 2. Upload to R2
+			const uploadRes = await fetch(uploadURL, {
+				method: 'PUT',
+				body: file,
+				headers: {
+					'Content-Type': file.type
+				}
+			});
+			if (!uploadRes.ok) throw new Error('Failed to upload to R2');
+
+			// 3. Confirm to Backend
+			const confirmRes = await apiFetch('/user/avatar/confirm', {
+				method: 'POST',
+				body: JSON.stringify({ key })
+			});
+			if (!confirmRes.ok) throw new Error('Failed to confirm upload');
+
+			// 4. Reload Profile
+			await loadProfile();
+		} catch (e) {
+			console.error('Avatar upload failed', e);
+			alert('Error al subir la fotografía');
+		} finally {
+			uploadingAvatar = false;
+			if (target) target.value = '';
+		}
+	}
+
 	function logout() {
 		authState.logout();
 		window.location.href = '/login';
@@ -91,17 +150,42 @@
 			<section class="mb-12 flex flex-col md:flex-row items-center md:items-end gap-8" in:fade>
 				<div class="relative group">
 					<div
-						class="w-32 h-32 rounded-sm overflow-hidden shadow-[0px_12px_32px_rgba(25,28,29,0.06)] bg-surface-container-high flex items-center justify-center text-primary bg-gradient-to-br from-surface-container-low to-surface-container-high"
+						class="w-32 h-32 rounded-sm overflow-hidden shadow-[0px_12px_32px_rgba(25,28,29,0.06)] bg-surface-container-high flex items-center justify-center text-primary bg-gradient-to-br from-surface-container-low to-surface-container-high relative"
 					>
-						<span class="text-5xl font-black font-headline">
-							{profile.name?.charAt(0) || 'U'}
-						</span>
+						{#if uploadingAvatar}
+							<div class="absolute inset-0 bg-white/60 flex items-center justify-center z-10 backdrop-blur-sm">
+								<div class="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+							</div>
+						{/if}
+
+						{#if profile.photo_url}
+							<img 
+								src={profile.photo_url} 
+								alt={profile.name} 
+								class="w-full h-full object-cover"
+							/>
+						{:else}
+							<span class="text-5xl font-black font-headline">
+								{profile.name?.charAt(0) || 'U'}
+							</span>
+						{/if}
 					</div>
+					
+					<input 
+						type="file" 
+						accept=".jpg,.jpeg,.png,.webp" 
+						class="hidden" 
+						bind:this={fileInput}
+						onchange={handleAvatarUpload}
+					/>
+					
 					<button
-						onclick={() => (editing = true)}
-						class="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-lg shadow-lg hover:bg-primary-container transition-all"
+						onclick={() => fileInput?.click()}
+						disabled={uploadingAvatar}
+						class="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-lg shadow-lg hover:bg-primary-container transition-all flex items-center justify-center disabled:opacity-50"
+						title="Cambiar fotografía"
 					>
-						<span class="material-symbols-outlined text-sm">edit</span>
+						<span class="material-symbols-outlined text-sm">photo_camera</span>
 					</button>
 				</div>
 				<div class="text-center md:text-left flex-1">

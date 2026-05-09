@@ -166,7 +166,7 @@ func (h *CenterHandler) GetCenterDetails(c *fiber.Ctx) error {
 	if center.ManagerID != nil {
 		var manager models.User
 		if err := h.DB.Get(&manager, "SELECT id, name, email, role_id, created_at FROM users WHERE id = $1", *center.ManagerID); err == nil {
-			dto := models.MapUserToDTO(manager)
+			dto := models.MapUserToDTO(manager, h.Cfg.R2PublicURL)
 			managerPtr = &dto
 		}
 	}
@@ -230,7 +230,7 @@ func (h *CenterHandler) GetCenterDetails(c *fiber.Ctx) error {
 
 	attDTOs := make([]models.AttendanceDetailDTO, 0)
 	for _, a := range attendances {
-		attDTOs = append(attDTOs, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, "", false))
+		attDTOs = append(attDTOs, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, "", false, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(models.WorkCenterDetailDTO{

@@ -13,6 +13,7 @@ export interface User {
     phone?: string;
     role_id: number;
     role_slug?: RoleSlug;
+    photo_url?: string;
     created_at?: string;
     updated_at?: string;
     employee_id?: number;
@@ -164,6 +165,8 @@ export interface ReportJobDTO {
     start_date: string;
     end_date: string;
     created_at: string;
+    pdf_url?: string;
+    excel_url?: string;
 }
 
 export interface DailyBreakdownItem {

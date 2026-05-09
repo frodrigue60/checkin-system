@@ -141,7 +141,7 @@ func (h *AttendanceAdminHandler) ListAttendances(c *fiber.Ctx) error {
 
 	dtos := make([]models.AttendanceDetailDTO, 0)
 	for _, a := range entities {
-		dtos = append(dtos, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, a.PositionName, a.IsLate))
+		dtos = append(dtos, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, a.PositionName, a.IsLate, h.Cfg.R2PublicURL))
 	}
 
 	totalPages := (total + limit - 1) / limit
@@ -251,11 +251,11 @@ func (h *AttendanceAdminHandler) GetAttendanceDetails(c *fiber.Ctx) error {
 
 	incidentDTOs := make([]models.IncidentDTO, 0)
 	for _, i := range incidents {
-		incidentDTOs = append(incidentDTOs, models.MapIncidentToDTO(i))
+		incidentDTOs = append(incidentDTOs, models.MapIncidentToDTO(i, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(models.AttendanceFullDetailDTO{
-		Attendance: models.MapAttendanceToDetailDTO(attRich.Attendance, attRich.EmployeeName, attRich.WorkCenterName, attRich.PositionName, attRich.IsLate),
+		Attendance: models.MapAttendanceToDetailDTO(attRich.Attendance, attRich.EmployeeName, attRich.WorkCenterName, attRich.PositionName, attRich.IsLate, h.Cfg.R2PublicURL),
 		WorkCenter: models.MapWorkCenterToDTO(center),
 		Shift:      shiftDTO,
 		Incidents:  incidentDTOs,

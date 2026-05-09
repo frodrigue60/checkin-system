@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"attendance-api/internal/config"
 	"attendance-api/internal/models"
 	"attendance-api/internal/services"
 	"attendance-api/internal/utils"
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -16,7 +19,10 @@ import (
 
 type ReportHandler struct {
 	DB           *sqlx.DB
+	Cfg          *config.Config
 	PDFService   *services.PDFService
+	ExcelService *services.ExcelService
+	Storage      services.StorageService
 	AuditService *services.AuditService
 }
 
@@ -173,7 +179,7 @@ func (h *ReportHandler) ListReportJobs(c *fiber.Ctx) error {
 
 	dtos := make([]models.ReportJobDTO, 0)
 	for _, j := range jobs {
-		dtos = append(dtos, models.MapReportJobToDTO(j))
+		dtos = append(dtos, models.MapReportJobToDTO(j, h.Cfg.R2PublicURL))
 	}
 	return c.JSON(dtos)
 }
@@ -187,7 +193,7 @@ func (h *ReportHandler) GetReportJob(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "Job not found"})
 	}
 
-	return c.JSON(models.MapReportJobToDTO(job))
+	return c.JSON(models.MapReportJobToDTO(job, h.Cfg.R2PublicURL))
 }
 
 // GenerateFullReport refactorizado para ser ASÍNCRONO y TRANSACCIONAL
@@ -493,7 +499,56 @@ func (h *ReportHandler) processReportJob(jobID int, req GenerateReportRequest) {
 		}
 	}
 
-	h.DB.Exec("UPDATE report_jobs SET status = 'completed', progress = 100, updated_at = NOW() WHERE id = $1", jobID)
+	// Final generation of files (PDF & Excel)
+	h.DB.Exec("UPDATE report_jobs SET progress = 95, status = 'generating_files' WHERE id = $1", jobID)
+
+	var finalReports []models.Report
+	err = h.DB.Select(&finalReports, `
+		SELECT r.*, u.name as employee_name 
+		FROM reports r
+		JOIN employees e ON r.employee_id = e.id
+		JOIN users u ON e.user_id = u.id
+		WHERE r.start_date = $1 AND r.end_date = $2
+		ORDER BY u.name ASC
+	`, start, end)
+
+	if err == nil && len(finalReports) > 0 {
+		dtos := make([]models.ReportDTO, len(finalReports))
+		for i, r := range finalReports {
+			dtos[i] = models.MapReportToDTO(r)
+		}
+
+		var pdfURL, excelURL *string
+
+		// 1. PDF Generation & Upload
+		pdfBytes, err := h.PDFService.GenerateReportsPDF(dtos, "vertical", "es")
+		if err == nil && h.Storage != nil {
+			pdfName := fmt.Sprintf("report_%d_%s_%s.pdf", jobID, req.StartDate, req.EndDate)
+			url, err := h.Storage.UploadFile(context.Background(), bytes.NewReader(pdfBytes), pdfName, "application/pdf")
+			if err == nil {
+				pdfURL = &url
+			}
+		}
+
+		// 2. Excel Generation & Upload
+		excelReader, err := h.ExcelService.GenerateReportsExcel(dtos)
+		if err == nil && h.Storage != nil {
+			excelName := fmt.Sprintf("report_%d_%s_%s.xlsx", jobID, req.StartDate, req.EndDate)
+			url, err := h.Storage.UploadFile(context.Background(), excelReader, excelName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+			if err == nil {
+				excelURL = &url
+			}
+		}
+
+		h.DB.Exec(`
+			UPDATE report_jobs 
+			SET status = 'completed', progress = 100, pdf_url = $1, excel_url = $2, updated_at = NOW() 
+			WHERE id = $3
+		`, pdfURL, excelURL, jobID)
+	} else {
+		h.DB.Exec("UPDATE report_jobs SET status = 'completed', progress = 100, updated_at = NOW() WHERE id = $1", jobID)
+	}
+
 	utils.Logger.Info("Report Job completed successfully", zap.Int("jobID", jobID))
 }
 

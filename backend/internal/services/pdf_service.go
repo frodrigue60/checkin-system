@@ -103,6 +103,12 @@ func (s *PDFService) GenerateReportsPDF(reports []models.ReportDTO, orientationS
 	m := maroto.New(cfgBuilder.Build())
 	labels := getLabels(lang)
 
+	// Add Summary Page First
+	if len(reports) > 1 {
+		summaryRows := s.getSummaryRows(reports, labels)
+		m.AddPages(page.New().Add(summaryRows...))
+	}
+
 	for _, report := range reports {
 		rows := s.getReportRows(report, labels)
 		m.AddPages(page.New().Add(rows...))
@@ -221,6 +227,74 @@ func (s *PDFService) getReportRows(report models.ReportDTO, labels PDFLabels) []
 			})),
 		))
 	}
+
+	return rows
+}
+
+func (s *PDFService) getSummaryRows(reports []models.ReportDTO, labels PDFLabels) []core.Row {
+	var rows []core.Row
+
+	// Header
+	rows = append(rows, row.New(20).Add(
+		col.New(12).Add(
+			text.New(s.appName, props.Text{
+				Size:  20,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+		),
+	))
+
+	rows = append(rows, row.New(10).Add(
+		col.New(12).Add(
+			text.New(labels.Consolidated, props.Text{
+				Size:  14,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+		),
+	))
+
+	rows = append(rows, row.New(10).Add(col.New(12))) // Space
+
+	// Table Header
+	rows = append(rows, row.New(10).Add(
+		col.New(4).Add(text.New(labels.Employee, props.Text{Size: 9, Style: fontstyle.Bold})),
+		col.New(2).Add(text.New(labels.DaysWorked, props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(labels.TotalHours, props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(labels.Deductions, props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(labels.NetEarnings, props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+	))
+
+	var totalDays int
+	var totalHours float64
+	var totalDeductions float64
+	var totalEarnings float64
+
+	for _, r := range reports {
+		rows = append(rows, row.New(8).Add(
+			col.New(4).Add(text.New(r.EmployeeName, props.Text{Size: 8})),
+			col.New(2).Add(text.New(fmt.Sprintf("%d", r.DaysWorked), props.Text{Size: 8, Align: align.Right})),
+			col.New(2).Add(text.New(fmt.Sprintf("%.2f", r.TotalHoursWorked), props.Text{Size: 8, Align: align.Right})),
+			col.New(2).Add(text.New(fmt.Sprintf("$%.2f", r.TotalDeductions), props.Text{Size: 8, Align: align.Right})),
+			col.New(2).Add(text.New(fmt.Sprintf("$%.2f", r.TotalEarnings), props.Text{Size: 8, Align: align.Right})),
+		))
+		totalDays += r.DaysWorked
+		totalHours += r.TotalHoursWorked
+		totalDeductions += r.TotalDeductions
+		totalEarnings += r.TotalEarnings
+	}
+
+	rows = append(rows, row.New(5).Add(col.New(12))) // Mini space
+
+	// Totals Row
+	rows = append(rows, row.New(10).Add(
+		col.New(4).Add(text.New("TOTAL", props.Text{Size: 9, Style: fontstyle.Bold})),
+		col.New(2).Add(text.New(fmt.Sprintf("%d", totalDays), props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(fmt.Sprintf("%.2f", totalHours), props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(fmt.Sprintf("$%.2f", totalDeductions), props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(fmt.Sprintf("$%.2f", totalEarnings), props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Right})),
+	))
 
 	return rows
 }

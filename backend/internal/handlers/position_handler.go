@@ -231,7 +231,7 @@ func (h *PositionHandler) GetPositionDetails(c *fiber.Ctx) error {
 
 	attDTOs := make([]models.AttendanceDetailDTO, 0)
 	for _, a := range attendances {
-		attDTOs = append(attDTOs, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, "", false))
+		attDTOs = append(attDTOs, models.MapAttendanceToDetailDTO(a.Attendance, a.EmployeeName, a.WorkCenterName, "", false, h.Cfg.R2PublicURL))
 	}
 
 	return c.JSON(models.PositionDetailDTO{

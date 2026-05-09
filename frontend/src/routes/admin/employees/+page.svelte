@@ -393,12 +393,20 @@
 
 				<div class="flex items-center gap-4">
 					<div
-						class="w-12 h-12 rounded-sm bg-slate-50 flex items-center justify-center text-primary font-black text-lg border border-slate-100 group-hover:bg-primary group-hover:text-white transition-all duration-500"
+						class="w-12 h-12 rounded-sm bg-slate-50 flex items-center justify-center text-primary font-black text-lg border border-slate-100 group-hover:bg-primary group-hover:text-white transition-all duration-500 overflow-hidden"
 					>
-						{emp.user_name
-							.split(' ')
-							.map((n) => n[0])
-							.join('')}
+						{#if emp.photo_url}
+							<img 
+								src={emp.photo_url} 
+								alt={emp.user_name} 
+								class="w-full h-full object-cover"
+							/>
+						{:else}
+							{emp.user_name
+								.split(' ')
+								.map((n) => n[0])
+								.join('')}
+						{/if}
 					</div>
 					<a href="/admin/employees/{emp.id}" class="flex flex-col">
 						<h3 class="text-base font-bold text-primary leading-tight">{emp.user_name}</h3>
