@@ -92,7 +92,8 @@
     },
     "pagination": "Page {current} of {total}",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "settings": "Preferences"
   },
   "errors": {
     "invalid_credentials": "Invalid email or password",
@@ -525,7 +526,8 @@
     "edit_description": "Update your personal contact information.",
     "management_mode": "Management Mode",
     "go_to_admin": "Enter Panel",
-    "management_tools": "Management Tools"
+    "management_tools": "Management Tools",
+    "language": "Application Language"
   },
   "schedule": {
     "title": "Schedule",

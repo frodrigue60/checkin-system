@@ -92,7 +92,8 @@
     },
     "pagination": "Página {current} de {total}",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "settings": "Preferencias"
   },
   "errors": {
     "invalid_credentials": "Email o contraseña inválidos",
@@ -525,7 +526,8 @@
     "edit_description": "Actualiza tu información de contacto personal.",
     "management_mode": "Modo Administrativo",
     "go_to_admin": "Entrar al Panel",
-    "management_tools": "Herramientas de Gestión"
+    "management_tools": "Herramientas de Gestión",
+    "language": "Idioma de la aplicación"
   },
   "schedule": {
     "title": "Horario",

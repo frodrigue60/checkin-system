@@ -4,6 +4,7 @@
 	import { authState } from '$lib/auth.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { _ } from 'svelte-i18n';
+	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
 
 	let profile = $state<any>(null);
 	let loading = $state(true);
@@ -355,7 +356,7 @@
 						<span class="h-[1px] flex-1 mx-4 bg-secondary/10"></span>
 					</div>
 					<a
-						href="/admin/attendance"
+						href="/dashboard"
 						class="w-full bg-secondary text-white p-6 rounded-sm flex items-center justify-between group hover:brightness-110 transition-all shadow-[0px_12px_32px_rgba(33,150,243,0.15)] no-underline"
 					>
 						<div class="flex items-center gap-5">
@@ -372,7 +373,25 @@
 				</section>
 			{/if}
 
-			<!-- Section 4 - Account Settings -->
+			<!-- Section 4 - Preferences -->
+			<section class="mb-12" in:fly={{ y: 20, delay: 275 }}>
+				<div class="flex items-baseline justify-between mb-4 px-2">
+					<h3 class="font-headline text-lg font-bold text-primary">
+						{$_('common.settings') || 'Preferencias'}
+					</h3>
+					<span class="h-[1px] flex-1 mx-4 bg-outline-variant/20"></span>
+				</div>
+				<div class="bg-surface-container-low p-6 rounded-sm space-y-4">
+					<div class="space-y-3">
+						<p class="font-label text-[10px] uppercase tracking-widest text-outline font-bold">
+							{$_('profile.language') || 'Idioma de la aplicación'}
+						</p>
+						<LanguageSelector class="!bg-white !h-12 !rounded-xl !border-outline-variant/10 shadow-sm" />
+					</div>
+				</div>
+			</section>
+
+			<!-- Section 5 - Account Settings -->
 			<section class="space-y-4" in:fly={{ y: 20, delay: 300 }}>
 				<button
 					onclick={() => alert('Próximamente')}
