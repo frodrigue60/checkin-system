@@ -58,7 +58,15 @@ func (h *UserHandler) GetEmployeeStats(c *fiber.Ctx) error {
 	var employee models.Employee
 	err := h.DB.Get(&employee, "SELECT * FROM employees WHERE user_id = $1", userID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Employee profile not found"})
+		// If not an employee, return empty stats instead of 404
+		return c.JSON(fiber.Map{
+			"stats": fiber.Map{
+				"total_hours":     0,
+				"total_earnings":  0,
+				"incidents_count": 0,
+			},
+			"recent": []interface{}{},
+		})
 	}
 
 	// 2. Calculate Month Stats
@@ -111,7 +119,14 @@ func (h *UserHandler) GetAttendanceHistory(c *fiber.Ctx) error {
 	var employee models.Employee
 	err := h.DB.Get(&employee, "SELECT * FROM employees WHERE user_id = $1", userID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Employee profile not found"})
+		// Return empty history instead of 404
+		return c.JSON(fiber.Map{
+			"stats": fiber.Map{
+				"total_hours":     0,
+				"attendance_rate": 0,
+			},
+			"history": []interface{}{},
+		})
 	}
 
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
@@ -251,10 +266,29 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
  	`
 	err := h.DB.Get(&profile, query, userID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
-	}
+		// Fallback: If query fails (e.g. mapping error), try to at least get basic user info
+		var basicUser struct {
+			ID       int     `db:"id" json:"id"`
+			Name     string  `db:"name" json:"name"`
+			Email    string  `db:"email" json:"email"`
+			Phone    *string `db:"phone" json:"phone"`
+			PhotoURL *string `db:"photo_url" json:"photo_url"`
+		}
+		errBasic := h.DB.Get(&basicUser, "SELECT id, name, email, phone, photo_url FROM users WHERE id = $1", userID)
+		if errBasic != nil {
+			utils.GetLogger().Error("Error fetching basic profile", "userID", userID, "error", errBasic.Error())
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+		}
 
-	profile.IsEmployee = profile.EmployeeCreatedAt != nil
+		profile.ID = basicUser.ID
+		profile.Name = basicUser.Name
+		profile.Email = basicUser.Email
+		profile.Phone = basicUser.Phone
+		profile.PhotoURL = basicUser.PhotoURL
+		profile.IsEmployee = false
+	} else {
+		profile.IsEmployee = profile.EmployeeCreatedAt != nil
+	}
 
 	if profile.PhotoURL != nil {
 		fullURL := h.Storage.GetPublicURL(*profile.PhotoURL)

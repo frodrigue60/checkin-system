@@ -98,7 +98,8 @@
     "next": "Siguiente",
     "settings": "Preferencias",
     "view_all": "Ver Todo",
-    "try_adjusting_filters": "Pruebe ajustando los filtros"
+    "try_adjusting_filters": "Pruebe ajustando los filtros",
+    "unassigned": "No asignado"
   },
   "errors": {
     "invalid_credentials": "Email o contraseña inválidos",
