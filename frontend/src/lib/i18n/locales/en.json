@@ -101,7 +101,9 @@
     "try_adjusting_filters": "Try adjusting the filters",
     "unassigned": "Unassigned",
     "to_be_defined": "To be defined",
-    "pending": "Pending"
+    "pending": "Pending",
+    "coming_soon": "Coming Soon",
+    "back_to_dashboard": "Back to Dashboard"
   },
   "errors": {
     "invalid_credentials": "Invalid email or password",

@@ -101,7 +101,9 @@
     "try_adjusting_filters": "Pruebe ajustando los filtros",
     "unassigned": "No asignado",
     "to_be_defined": "Por definir",
-    "pending": "Pendiente"
+    "pending": "Pendiente",
+    "coming_soon": "Próximamente",
+    "back_to_dashboard": "Volver al Panel"
   },
   "errors": {
     "invalid_credentials": "Email o contraseña inválidos",
