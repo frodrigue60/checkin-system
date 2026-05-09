@@ -10,6 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 type UserHandler struct {
@@ -276,7 +277,9 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 		}
 		errBasic := h.DB.Get(&basicUser, "SELECT id, name, email, phone, photo_url FROM users WHERE id = $1", userID)
 		if errBasic != nil {
-			utils.GetLogger().Error("Error fetching basic profile", "userID", userID, "error", errBasic.Error())
+			utils.GetLogger().Error("Error fetching basic profile", 
+				zap.Int("userID", userID), 
+				zap.Error(errBasic))
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 		}
 
