@@ -99,7 +99,9 @@
     "settings": "Preferencias",
     "view_all": "Ver Todo",
     "try_adjusting_filters": "Pruebe ajustando los filtros",
-    "unassigned": "No asignado"
+    "unassigned": "No asignado",
+    "to_be_defined": "Por definir",
+    "pending": "Pendiente"
   },
   "errors": {
     "invalid_credentials": "Email o contraseña inválidos",
