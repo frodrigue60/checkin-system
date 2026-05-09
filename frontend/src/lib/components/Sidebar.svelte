@@ -168,28 +168,6 @@
 					</div>
 				</div>
 			{/each}
-		{:else if authState.isEmployee}
-			<div class="space-y-2">
-				<h4 class="px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-					{$_('sidebar.personal_portal')}
-				</h4>
-				<div class="space-y-1">
-					{#each employeeLinks as link (link.href)}
-						{@const Icon = link.icon}
-						<a
-							href={resolve(link.href)}
-							class="flex items-center gap-3 px-3 py-2.5 rounded-md font-bold text-sm transition-all {isActive(
-								link.href
-							)
-								? 'bg-primary/10 text-primary'
-								: 'text-slate-600 hover:bg-slate-50'}"
-						>
-							<Icon class="h-4 w-4" />
-							{$_(link.label)}
-						</a>
-					{/each}
-				</div>
-			</div>
 		{/if}
 	</div>
 
@@ -216,26 +194,18 @@
 		<div class="px-2 pt-2 pb-1">
 			<LanguageSelector />
 		</div>
-		<div class="grid grid-cols-2 gap-2 pb-2">
-			<!-- <Button variant="ghost" class="h-9 gap-2 text-slate-500 hover:text-slate-900 justify-start px-2 font-bold text-xs">
-        <Settings class="h-4 w-4" />
-        Config
-      </Button> -->
+		<div class="grid grid-cols-1 gap-2 pb-2">
 			<a
 				href={resolve('/')}
-				class="flex items-center gap-3 px-3 py-2.5 rounded-md font-bold text-sm transition-all {isActive(
-					'/'
-				)
-					? 'bg-primary/10 text-primary'
-					: 'text-slate-600 hover:bg-slate-50'}"
+				class="flex items-center gap-3 px-3 py-2.5 rounded-md font-bold text-sm transition-all text-slate-600 hover:bg-primary/5 hover:text-primary border border-transparent hover:border-primary/10"
 			>
-				<LayoutDashboard class="h-4 w-4" />
-				{$_('common.site')}
+				<Globe class="h-4 w-4" />
+				{$_('sidebar.personal_portal')}
 			</a>
 			<Button
 				variant="ghost"
 				onclick={logout}
-				class="h-9 gap-2 text-rose-500 hover:bg-rose-50 hover:text-rose-600 justify-start px-2 font-bold text-xs"
+				class="h-9 gap-2 text-rose-500 hover:bg-rose-50 hover:text-rose-600 justify-start px-3 font-bold text-xs"
 			>
 				<LogOut class="h-4 w-4" />
 				{$_('common.logout')}

@@ -522,7 +522,10 @@
     "shift_schedule": "Turno/Horario",
     "change_password": "Cambiar Contraseña",
     "edit_title": "Editar Perfil",
-    "edit_description": "Actualiza tu información de contacto personal."
+    "edit_description": "Actualiza tu información de contacto personal.",
+    "management_mode": "Modo Administrativo",
+    "go_to_admin": "Entrar al Panel",
+    "management_tools": "Herramientas de Gestión"
   },
   "schedule": {
     "title": "Horario",

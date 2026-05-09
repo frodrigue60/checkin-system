@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { apiFetch } from '$lib/api';
 	import { authState } from '$lib/auth.svelte';
 	import { fade, fly } from 'svelte/transition';
@@ -100,7 +100,10 @@
 		};
 	}
 
-	onMount(() => {
+	let mounted = $state(false);
+	onMount(async () => {
+		await tick();
+		mounted = true;
 		loadHistory();
 	});
 </script>
@@ -110,8 +113,9 @@
 </svelte:head>
 
 <div class="min-h-screen bg-surface pb-32">
-	<!-- Main Content -->
-	<main class="max-w-2xl mx-auto px-4 pt-8 space-y-8">
+	{#if mounted}
+		<!-- Main Content -->
+		<main class="max-w-2xl mx-auto px-4 pt-8 space-y-8" in:fly={{ y: 20, duration: 800 }}>
 		<!-- Month Selector -->
 		<section class="flex items-center justify-between" in:fly={{ y: -20, duration: 600 }}>
 			<div>
@@ -320,6 +324,7 @@
 			{/if}
 		</section>
 	</main>
+	{/if}
 </div>
 
 <!-- Justification Modal -->

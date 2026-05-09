@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { apiFetch } from '$lib/api';
 	import { authState } from '$lib/auth.svelte';
 	import { fade, fly } from 'svelte/transition';
@@ -10,6 +10,7 @@
 	let editing = $state(false);
 	let saving = $state(false);
 	let editForm = $state({ name: '', email: '', phone: '' });
+	let mounted = $state(false);
 
 	async function loadProfile() {
 		try {
@@ -51,7 +52,9 @@
 		}
 	}
 
-	onMount(() => {
+	onMount(async () => {
+		await tick();
+		mounted = true;
 		loadProfile();
 	});
 
@@ -138,6 +141,8 @@
 	class="min-h-screen bg-background text-on-surface font-body selection:bg-primary-container selection:text-white"
 >
 	<main class="pb-32 px-6 max-w-3xl mx-auto">
+		{#if mounted}
+			<div in:fly={{ y: 20, duration: 800 }}>
 		{#if loading}
 			<div class="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
 				<div
@@ -340,7 +345,34 @@
 				</div>
 			</section>
 
-			<!-- Section 3 - Account Settings -->
+			<!-- Section 3 - Management Mode Switch (Only for Admin/Manager) -->
+			{#if authState.isAdmin || authState.isManager || authState.isSupervisor}
+				<section class="mb-12" in:fly={{ y: 20, delay: 250 }}>
+					<div class="flex items-baseline justify-between mb-4 px-2">
+						<h3 class="font-headline text-lg font-bold text-secondary">
+							{$_('profile.management_mode')}
+						</h3>
+						<span class="h-[1px] flex-1 mx-4 bg-secondary/10"></span>
+					</div>
+					<a
+						href="/admin/attendance"
+						class="w-full bg-secondary text-white p-6 rounded-sm flex items-center justify-between group hover:brightness-110 transition-all shadow-[0px_12px_32px_rgba(33,150,243,0.15)] no-underline"
+					>
+						<div class="flex items-center gap-5">
+							<div class="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
+								<span class="material-symbols-outlined text-2xl">admin_panel_settings</span>
+							</div>
+							<div class="flex flex-col">
+								<span class="font-headline font-black text-xl leading-none">{$_('profile.go_to_admin')}</span>
+								<span class="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mt-2">{$_('profile.management_tools')}</span>
+							</div>
+						</div>
+						<span class="material-symbols-outlined text-3xl group-hover:translate-x-2 transition-transform">arrow_forward</span>
+					</a>
+				</section>
+			{/if}
+
+			<!-- Section 4 - Account Settings -->
 			<section class="space-y-4" in:fly={{ y: 20, delay: 300 }}>
 				<button
 					onclick={() => alert('Próximamente')}
@@ -466,6 +498,8 @@
 						</button>
 					</div>
 				</div>
+			</div>
+		{/if}
 			</div>
 		{/if}
 	</main>

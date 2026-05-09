@@ -149,10 +149,10 @@
 
 <div class="min-h-screen bg-slate-50 p-6 md:p-12 max-w-7xl mx-auto space-y-12">
 	<!-- Header -->
-	<header
-		class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8"
-		in:fly={{ y: 20, duration: 800, easing: quintOut }}
-	>
+	<div in:fly={{ y: 20, duration: 800, easing: quintOut }}>
+		<header
+			class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8"
+		>
 		<div class="space-y-3">
 			<Button variant="ghost" href="/dashboard" class="rounded-md font-bold -ml-3 text-slate-500 hover:text-primary gap-2 font-sans">
 				<ArrowLeft class="h-4 w-4" />
@@ -183,7 +183,8 @@
 				{employees.length} Operativos Activos
 			</Badge>
 		</div>
-	</header>
+		</header>
+	</div>
 
 	{#if loading}
 		<div class="flex flex-col items-center justify-center p-20 gap-4">
@@ -234,10 +235,10 @@
 		</div>
 
 		<!-- Workforce Section -->
-		<Card.Root
-			class="border-none shadow-premium rounded-md overflow-hidden bg-white text-card-foreground"
-			in:fly={{ y: 20, duration: 800, easing: quintOut, delay: 200 }}
-		>
+		<div in:fly={{ y: 20, duration: 800, easing: quintOut, delay: 200 }}>
+			<Card.Root
+				class="border-none shadow-premium rounded-md overflow-hidden bg-white text-card-foreground"
+			>
 			<Card.Header class="p-8 md:p-10 border-b border-slate-100/50 space-y-6">
 				<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 					<div class="space-y-1">
@@ -327,7 +328,8 @@
 				</Table.Root>
 			</Card.Content>
 		</Card.Root>
-	{/if}
+	</div>
+{/if}
 </div>
 
 <!-- Reassignment Dialog -->

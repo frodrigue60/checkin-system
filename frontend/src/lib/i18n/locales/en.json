@@ -522,7 +522,10 @@
     "shift_schedule": "Shift/Schedule",
     "change_password": "Change Password",
     "edit_title": "Edit Profile",
-    "edit_description": "Update your personal contact information."
+    "edit_description": "Update your personal contact information.",
+    "management_mode": "Management Mode",
+    "go_to_admin": "Enter Panel",
+    "management_tools": "Management Tools"
   },
   "schedule": {
     "title": "Schedule",

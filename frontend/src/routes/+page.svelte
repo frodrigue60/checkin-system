@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { apiFetch } from '$lib/api';
 	import { authState, type User } from '$lib/auth.svelte';
@@ -83,14 +83,18 @@
 		return { worked: formatMs(diffMs), remaining: formatMs(remMs) };
 	});
 
-	onMount(() => {
-		mounted = true;
+
+	onMount(async () => {
 		if (authState.token && authState.user) {
 			currentUser = authState.user;
 			fetchTodayStatus();
 			fetchWorkCenters();
 		}
 		checkingAuth = false;
+		
+		// Ensure the parent container is in the DOM before triggering transitions
+		await tick();
+		mounted = true;
 
 		const timer = setInterval(() => {
 			currentTime = new Date();
@@ -375,10 +379,14 @@
 	>
 </svelte:head>
 
-{#if !checkingAuth && mounted}
+{#if !checkingAuth}
 	{#if !authState.isAuthenticated}
 		<!-- GUEST LANDING VIEW -->
-		<main class="min-h-screen flex flex-col md:flex-row relative overflow-hidden bg-surface">
+	{#if mounted}
+		<main
+			class="min-h-screen flex flex-col md:flex-row relative overflow-hidden bg-surface"
+			in:fly={{ y: 20, duration: 800 }}
+		>
 			<!-- Left Side: Editorial Brand Pillar (Desktop Only) -->
 			<section class="hidden md:flex md:w-5/12 bg-primary p-16 flex-col justify-between relative">
 				<div class="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
@@ -460,10 +468,12 @@
 				</div>
 			</section>
 		</main>
-	{:else}
+	{/if}
+{:else}
 		<!-- LOGGED IN ACTIVITY DASHBOARD VIEW -->
 		<div class="bg-background text-on-surface font-body pb-32 pt-6">
-			<main class="px-6 pt-4 max-w-2xl mx-auto space-y-12">
+			{#if mounted}
+				<main class="px-6 pt-4 max-w-2xl mx-auto space-y-12" in:fly={{ y: 20, duration: 800 }}>
 				<!-- Minimal Hero Section -->
 				<section class="text-center pt-4">
 					<div class="flex flex-col items-center">
@@ -787,6 +797,7 @@
 					</div>
 				</section>
 			</main>
+		{/if}
 		</div>
 	{/if}
 

@@ -4,6 +4,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import MobileHeader from '$lib/components/MobileHeader.svelte';
 	import MobileBottomNav from '$lib/components/MobileBottomNav.svelte';
+	import DesktopNav from '$lib/components/DesktopNav.svelte';
 	import Toaster from '$lib/components/Toaster.svelte';
 	import { page } from '$app/state';
 	import { authState } from '$lib/auth.svelte';
@@ -19,7 +20,18 @@
 		page.url.pathname === '/register'
 	);
 	
+	const isManagementPath = $derived(
+		page.url.pathname.startsWith('/admin') || 
+		page.url.pathname.startsWith('/dashboard')
+	);
+
 	const showShell = $derived(!isAuthPage && authState.isAuthenticated);
+	
+	// Split UI Logic
+	const showSidebar = $derived(showShell && isManagementPath && (authState.isAdmin || authState.isManager || authState.isSupervisor));
+	const showBottomNav = $derived(showShell && !isManagementPath);
+	const showDesktopNav = $derived(showShell && !isManagementPath);
+	const showHeader = $derived(showShell && isManagementPath);
 </script>
 
 <svelte:head>
@@ -38,19 +50,28 @@
 	</div>
 {:else}
 	<div class="min-h-screen bg-background flex flex-col lg:flex-row selection:bg-primary/10">
-		{#if showShell}
+		{#if showHeader}
 			<MobileHeader onMenuClick={() => sidebarOpen = true} />
-			
-			<Sidebar bind:isMobileOpen={sidebarOpen} />
 		{/if}
 		
-		<main class="flex-1 flex flex-col min-w-0 {showShell ? 'lg:pl-[280px] pt-16 lg:pt-0' : ''}">
+		{#if showSidebar}
+			<Sidebar bind:isMobileOpen={sidebarOpen} />
+		{/if}
+
+		{#if showDesktopNav}
+			<DesktopNav />
+		{/if}
+		
+		<main class="flex-1 flex flex-col min-w-0 
+			{showSidebar ? 'lg:pl-[280px]' : ''} 
+			{showHeader ? 'pt-16 lg:pt-0' : ''}
+			{showDesktopNav ? 'lg:pt-20' : ''}">
 			<div class="flex-1">
 				{@render children()}
 			</div>
 		</main>
 
-		{#if showShell}
+		{#if showBottomNav}
 			<MobileBottomNav />
 		{/if}
 	</div>
