@@ -1,5 +1,7 @@
 {
   "common": {
+    "login": "Login",
+    "register": "Register",
     "save": "Save",
     "cancel": "Cancel",
     "edit": "Edit",
@@ -19,6 +21,7 @@
     "success": "Success",
     "confirm": "Confirm",
     "name": "Name",
+    "email": "Email Address",
     "address": "Address",
     "latitude": "Latitude",
     "longitude": "Longitude",

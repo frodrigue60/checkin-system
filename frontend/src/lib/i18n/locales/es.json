@@ -1,5 +1,7 @@
 {
   "common": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
     "save": "Guardar",
     "cancel": "Cancelar",
     "edit": "Editar",
@@ -19,6 +21,7 @@
     "success": "Éxito",
     "confirm": "Confirmar",
     "name": "Nombre",
+    "email": "Correo Electrónico",
     "address": "Dirección",
     "latitude": "Latitud",
     "longitude": "Longitud",
@@ -549,7 +552,7 @@
     "login_button": "Ingresar",
     "register_button": "Crear Cuenta",
     "authenticating": "Autenticando...",
-    "initializing": "Initializing...",
+    "initializing": "Iniciando...",
     "no_account": "¿No tiene cuenta?",
     "has_account": "¿Ya tiene cuenta?",
     "footer_note": "Solo personal autorizado.",
