@@ -12,6 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// AttendanceRich is a joined attendance record with employee, center, and position names.
+type AttendanceRich struct {
+	models.Attendance
+	EmployeeName   string `db:"employee_name"`
+	WorkCenterName string `db:"center_name"`
+	PositionName   string `db:"position_name"`
+	IsLate         bool   `db:"is_late"`
+}
+
 func (h *AdminBase) buildAttendanceFilters(c *fiber.Ctx) ([]string, []interface{}) {
 	start := c.Query("start")
 	end := c.Query("end")
