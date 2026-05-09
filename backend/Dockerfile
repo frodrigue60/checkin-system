@@ -28,8 +28,8 @@ WORKDIR /root/
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/api-service .
-# Copy migrations if they are needed at runtime
-COPY --from=builder /app/migrations ./migrations
+# Copy migrations to the path expected by the code (relative to WORKDIR)
+COPY --from=builder /app/database/migrations ./database/migrations
 # Copy .env.example as a base
 COPY --from=builder /app/.env.example ./.env
 
