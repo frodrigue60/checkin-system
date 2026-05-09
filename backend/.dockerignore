@@ -1,0 +1,8 @@
+.git
+.air.toml
+tmp
+logs
+*.exe
+vendor
+Dockerfile
+.dockerignore

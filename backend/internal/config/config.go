@@ -29,14 +29,19 @@ func LoadConfig() *Config {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	host := getEnv("DB_HOST", "127.0.0.1")
-	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USERNAME", "postgres")
-	pass := getEnv("DB_PASSWORD", "postgres")
-	dbname := getEnv("DB_DATABASE", "jgc_checkin")
-	sslmode := getEnv("DB_SSLMODE", "disable")
+	// 1. Try to get connection from a single string (Standard in Railway/Heroku/Docker)
+	dbURL := getEnv("DATABASE_URL", getEnv("DB_URL", ""))
 
-	dbURL := "postgres://" + user + ":" + pass + "@" + host + ":" + port + "/" + dbname + "?sslmode=" + sslmode
+	// 2. Fallback to individual variables if no string is provided
+	if dbURL == "" {
+		host := getEnv("DB_HOST", "127.0.0.1")
+		port := getEnv("DB_PORT", "5432")
+		user := getEnv("DB_USERNAME", "postgres")
+		pass := getEnv("DB_PASSWORD", "postgres")
+		dbname := getEnv("DB_DATABASE", "jgc_checkin")
+		sslmode := getEnv("DB_SSLMODE", "disable")
+		dbURL = "postgres://" + user + ":" + pass + "@" + host + ":" + port + "/" + dbname + "?sslmode=" + sslmode
+	}
 
 	return &Config{
 		DBURL:          dbURL,
