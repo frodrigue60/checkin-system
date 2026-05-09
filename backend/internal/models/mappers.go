@@ -76,7 +76,10 @@ func MapAttendanceToDTO(a Attendance) AttendanceDTO {
 		AbsenceReason:     a.AbsenceReason,
 		EvidenceURL:       a.EvidenceURL,
 		CheckOutNote:      a.CheckOutNote,
+		CheckInAddress:    a.CheckInAddress,
+		CheckInNote:       a.CheckInNote,
 		CheckOutAddress:   a.CheckOutAddress,
+		IsFieldWork:       a.IsFieldWork,
 		EvidenceURLs:      evs,
 	}
 }
@@ -106,7 +109,10 @@ func MapAttendanceToDetailDTO(a Attendance, empName, centerName, posName string,
 		IsLate:            isLate,
 		EvidenceURL:       a.EvidenceURL,
 		CheckOutNote:      a.CheckOutNote,
+		CheckInAddress:    a.CheckInAddress,
+		CheckInNote:       a.CheckInNote,
 		CheckOutAddress:   a.CheckOutAddress,
+		IsFieldWork:       a.IsFieldWork,
 		EvidenceURLs:      dto.EvidenceURLs,
 	}
 }

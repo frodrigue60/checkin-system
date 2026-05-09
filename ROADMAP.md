@@ -126,6 +126,7 @@ Plan de fases para la implementación total de soporte multi-idioma.
 - [ ] **Dashboard Visual:** Gráficas de cumplimiento y puntualidad global (Chart.js / LayerChart).
 - [x] **Logs de Auditoría:** Registro estricto de revisiones y ediciones manuales de registros de asistencia (Audit Hub).
 - [x] **Justificación de Incidencias:** Flujo de aprobación para que empleados justifiquen retardos desde su panel.
+- [ ] **Tope de Horario (Time Capping):** Opción para limitar el inicio del cálculo de sueldo a la hora oficial del turno, ignorando entradas anticipadas no autorizadas (Control de horas extra).
 
 ### Fase 8: Integraciones Externas
 

@@ -28,6 +28,8 @@ type AttendanceRequest struct {
 	EvidenceURL  *string `json:"evidence_url"`
 	CheckOutNote *string `json:"check_out_note"`
 	Address      *string  `json:"address"`
+	CheckInNote  *string  `json:"check_in_note"`
+	IsFieldWork  bool     `json:"is_field_work"`
 	EvidenceURLs []string `json:"evidence_urls"`
 }
 
@@ -147,12 +149,12 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 					break
 				}
 			}
-			if !found {
+			if !found && !req.IsFieldWork {
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Hoy no es un día laboral programado para tu turno."})
 			}
 
-			// 2.2 Validate Time Windows (Only for fixed shifts)
-			if shift.ShiftType == "fixed" {
+			// 2.2 Validate Time Windows (Only for fixed shifts, skipped if Field Work)
+			if shift.ShiftType == "fixed" && !req.IsFieldWork {
 				if h.Service.IsTooEarly(now, shift, center.Timezone) {
 					startTime, _ := h.Service.ParseFlexibleTime(shift.ExpectedCheckIn)
 					return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": fmt.Sprintf("Es demasiado pronto para marcar entrada. Tu turno inicia a las %s.", startTime.Format("15:04"))})
@@ -164,8 +166,8 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 				}
 			}
 
-			// 2.3 Check for Late Incident (Only if not flexible/field)
-			if shift.ShiftType == "fixed" {
+			// 2.3 Check for Late Incident (Only if not flexible/field, skipped if Field Work)
+			if shift.ShiftType == "fixed" && !req.IsFieldWork {
 				isLate, delayMinutes = h.Service.CheckIfLate(now, shift, center.Timezone)
 				utils.Logger.Info("Late Check", 
 					zap.Time("now", now),
@@ -185,6 +187,9 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 		CheckIn:          &now,
 		CheckInLatitude:  &req.Latitude,
 		CheckInLongitude: &req.Longitude,
+		CheckInAddress:   req.Address,
+		CheckInNote:      req.CheckInNote,
+		IsFieldWork:      req.IsFieldWork,
 		CreatedAt:        &now,
 		UpdatedAt:        &now,
 	}
@@ -196,9 +201,9 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 
 	var newID int
 	err = tx.QueryRow(
-		`INSERT INTO attendances (employee_id, work_center_id, work_shift_id, check_in, check_in_latitude, check_in_longitude, created_at, updated_at) 
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-		emp.ID, center.ID, shiftID, now, req.Latitude, req.Longitude, now, now,
+		`INSERT INTO attendances (employee_id, work_center_id, work_shift_id, check_in, check_in_latitude, check_in_longitude, check_in_address, check_in_note, is_field_work, created_at, updated_at) 
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+		emp.ID, center.ID, shiftID, now, req.Latitude, req.Longitude, req.Address, req.CheckInNote, req.IsFieldWork, now, now,
 	).Scan(&newID)
 	
 	if err != nil {
@@ -207,8 +212,8 @@ func (h *AttendanceHandler) CheckIn(c *fiber.Ctx) error {
 	}
 	attendance.ID = newID
 
-	// 4. Create Geofence Incident if necessary (Skip for field shifts)
-	if shift.ShiftType != "field" {
+	// 4. Create Geofence Incident if necessary (Skip for field shifts OR explicit field work)
+	if shift.ShiftType != "field" && !req.IsFieldWork {
 		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, attendance.ID, req.Latitude, req.Longitude, center, "check-in")
 		if err != nil {
 			tx.Rollback()
@@ -284,8 +289,8 @@ func (h *AttendanceHandler) CheckOutNoID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not start transaction"})
 	}
 
-	// 1. Geofence Validation for Check-Out (Skip for field shifts)
-	if shift.ShiftType != "field" {
+	// 1. Geofence Validation for Check-Out (Skip for field shifts OR field work)
+	if shift.ShiftType != "field" && !att.IsFieldWork {
 		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "check-out")
 		if err != nil {
 			tx.Rollback()
@@ -369,8 +374,8 @@ func (h *AttendanceHandler) CheckOut(c *fiber.Ctx) error {
 		tx.Get(&shift, "SELECT * FROM work_shifts WHERE id = $1", *att.WorkShiftID)
 	}
 
-	// Geofence Validation (Skip for field shifts)
-	if req.Latitude != 0 && req.Longitude != 0 && shift.ShiftType != "field" {
+	// Geofence Validation (Skip for field shifts OR field work)
+	if req.Latitude != 0 && req.Longitude != 0 && shift.ShiftType != "field" && !att.IsFieldWork {
 		err = h.Service.CreateGeofenceIncident(c.Context(), tx, att.EmployeeID, center.ID, att.ID, req.Latitude, req.Longitude, center, "check-out-manual")
 		if err != nil {
 			tx.Rollback()
@@ -467,8 +472,8 @@ func (h *AttendanceHandler) LunchStart(c *fiber.Ctx) error {
 		tx.Get(&shift, "SELECT * FROM work_shifts WHERE id = $1", *att.WorkShiftID)
 	}
 
-	// 3. Create Geofence Incident if necessary (Skip for field shifts)
-	if shift.ShiftType != "field" {
+	// 3. Create Geofence Incident if necessary (Skip for field shifts OR field work)
+	if shift.ShiftType != "field" && !att.IsFieldWork {
 		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "lunch-start")
 		if err != nil {
 			tx.Rollback()
@@ -535,8 +540,8 @@ func (h *AttendanceHandler) LunchEnd(c *fiber.Ctx) error {
 		tx.Get(&shift, "SELECT * FROM work_shifts WHERE id = $1", *att.WorkShiftID)
 	}
 
-	// 3. Create Geofence Incident if necessary (Skip for field shifts)
-	if shift.ShiftType != "field" {
+	// 3. Create Geofence Incident if necessary (Skip for field shifts OR field work)
+	if shift.ShiftType != "field" && !att.IsFieldWork {
 		err = h.Service.CreateGeofenceIncident(c.Context(), tx, emp.ID, center.ID, att.ID, req.Latitude, req.Longitude, center, "lunch-end")
 		if err != nil {
 			tx.Rollback()

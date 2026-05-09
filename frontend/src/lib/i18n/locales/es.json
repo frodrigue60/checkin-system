@@ -670,14 +670,18 @@
     "compliance_trend": "Tendencia de Cumplimiento",
     "compliance": "Cumplimiento",
     "no_data_available": "No hay datos suficientes para mostrar la tendencia",
-    "service_note_label": "Nota de Servicio / Emergencia",
-    "service_note_placeholder": "Describe brevemente las labores realizadas fuera de la sede...",
+    "service_note_label": "Resumen de Actividades Realizadas",
+    "service_note_placeholder": "Describa brevemente lo logrado durante el turno...",
     "checkout_address_label": "Ubicación Detectada",
     "min_evidence_required": "Mínimo {min} fotografías requeridas",
     "add_another_photo": "Agregar otra fotografía",
     "evidence_count": "{count} de {min} fotografías",
     "retake_photo": "Repetir foto",
-    "confirm_checkout_final": "Confirmar Salida"
+    "confirm_checkout_final": "Confirmar Salida",
+    "field_work_mode": "Modo Campo",
+    "field_work_description": "Registrar fuera de ubicación permitida",
+    "field_work_note_label": "Justificación de Inicio Remoto",
+    "field_work_note_placeholder": "Especifique el motivo (ej: Cliente X, Emergencia en sitio Y)..."
   },
   "success": {
     "checkin": "¡Check-in exitoso! Buen turno.",

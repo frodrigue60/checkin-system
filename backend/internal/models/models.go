@@ -111,7 +111,10 @@ type Attendance struct {
 	AbsenceReason     *string    `db:"absence_reason" json:"absence_reason"`
 	EvidenceURL       *string    `db:"evidence_url" json:"evidence_url"`
 	CheckOutNote      *string    `db:"check_out_note" json:"check_out_note"`
+	CheckInAddress    *string    `db:"check_in_address" json:"check_in_address"`
+	CheckInNote       *string    `db:"check_in_note" json:"check_in_note"`
 	CheckOutAddress   *string         `db:"check_out_address" json:"check_out_address"`
+	IsFieldWork       bool            `db:"is_field_work" json:"is_field_work"`
 	EvidenceURLs      json.RawMessage `db:"evidence_urls" json:"evidence_urls"`
 	CreatedAt         *time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt         *time.Time      `db:"updated_at" json:"updated_at"`

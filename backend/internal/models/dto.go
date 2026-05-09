@@ -41,7 +41,10 @@ type AttendanceDTO struct {
 	AbsenceReason   *string    `json:"absence_reason"`
 	EvidenceURL     *string    `json:"evidence_url"`
 	CheckOutNote    *string    `json:"check_out_note"`
+	CheckInAddress  *string    `json:"check_in_address"`
+	CheckInNote     *string    `json:"check_in_note"`
 	CheckOutAddress *string    `json:"check_out_address"`
+	IsFieldWork     bool       `json:"is_field_work"`
 	EvidenceURLs    []string   `json:"evidence_urls"`
 }
 
@@ -68,7 +71,10 @@ type AttendanceDetailDTO struct {
 	IsLate          bool       `json:"is_late"`
 	EvidenceURL     *string    `json:"evidence_url"`
 	CheckOutNote    *string    `json:"check_out_note"`
+	CheckInAddress  *string    `json:"check_in_address"`
+	CheckInNote     *string    `json:"check_in_note"`
 	CheckOutAddress *string    `json:"check_out_address"`
+	IsFieldWork     bool       `json:"is_field_work"`
 	EvidenceURLs    []string   `json:"evidence_urls"`
 }
 

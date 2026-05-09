@@ -670,14 +670,18 @@
     "compliance_trend": "Compliance Trend",
     "compliance": "Compliance",
     "no_data_available": "Not enough data to show trend",
-    "service_note_label": "Service / Emergency Note",
-    "service_note_placeholder": "Briefly describe the work performed outside the center...",
+    "service_note_label": "Activity Summary",
+    "service_note_placeholder": "Briefly describe what was achieved during the shift...",
     "checkout_address_label": "Detected Location",
     "min_evidence_required": "Minimum {min} photographs required",
     "add_another_photo": "Add another photograph",
     "evidence_count": "{count} of {min} photographs",
     "retake_photo": "Retake photo",
-    "confirm_checkout_final": "Confirm Check-out"
+    "confirm_checkout_final": "Confirm Check-out",
+    "field_work_mode": "Field Mode",
+    "field_work_description": "Register outside allowed location",
+    "field_work_note_label": "Remote Start Justification",
+    "field_work_note_placeholder": "Specify the reason (e.g., Client X, Emergency at site Y)..."
   },
   "success": {
     "checkin": "Check-in successful! Have a great shift.",

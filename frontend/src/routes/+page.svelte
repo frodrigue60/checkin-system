@@ -13,6 +13,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import type { Attendance, WorkShift, WorkCenter } from '$lib/types/models';
+	import { getCurrentLocation, reverseGeocode } from '$lib/services/location';
 
 	let loading = $state(false);
 	let error = $state('');
@@ -31,6 +32,8 @@
 	let absenceLoading = $state(false);
 	let workCenters = $state<WorkCenter[]>([]);
 	let selectedWorkCenterId = $state<number | null>(null);
+	let isFieldWork = $state(false);
+	let fieldWorkNote = $state('');
 
 	let showEvidenceModal = $state(false);
 	let evidencePreviews = $state<string[]>([]);
@@ -136,25 +139,30 @@
 		loading = true;
 		error = '';
 		try {
-			const pos = await new Promise<GeolocationPosition>((res, rej) =>
-				navigator.geolocation.getCurrentPosition(res, rej, {
-					enableHighAccuracy: true,
-					timeout: 5000,
-					maximumAge: 0
-				})
-			).catch(() => {
-				throw new Error($_('error.location_required'));
-			});
+			// Layered location retrieval
+			const pos = await getCurrentLocation();
+
+			let address = '';
+			if (actionType === 'check-in' && isFieldWork) {
+				address = await reverseGeocode(pos.latitude, pos.longitude);
+			}
 
 			const body: any = {
 				employee_id: authState.user?.employee_id || authState.user?.id,
-				latitude: pos.coords.latitude,
-				longitude: pos.coords.longitude,
-				work_center_id: actionType === 'check-in' ? selectedWorkCenterId : undefined
+				latitude: pos.latitude,
+				longitude: pos.longitude,
+				work_center_id: actionType === 'check-in' ? selectedWorkCenterId : undefined,
+				is_field_work: isFieldWork,
+				check_in_note: isFieldWork ? fieldWorkNote : undefined,
+				address: address || undefined
 			};
 
 			if (actionType === 'check-out') {
 				loading = false;
+				// Pre-fill check-out note with check-in note as a draft if it exists
+				if (todayAttendance?.check_in_note) {
+					serviceNote = todayAttendance.check_in_note;
+				}
 				showEvidenceModal = true;
 				return;
 			}
@@ -186,6 +194,8 @@
 			// Apply instant reactivity
 			if (data.attendance) {
 				todayAttendance = data.attendance;
+				isFieldWork = false; // Reset toggle
+				fieldWorkNote = '';  // Reset note
 			}
 
 			// Fallback background sync
@@ -488,7 +498,39 @@
 									</select>
 								</div>
 							{/if}
+
+							<!-- Field Work Toggle -->
+							<div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-sm">
+								<div class="flex items-center gap-3">
+									<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+										<span class="material-symbols-outlined text-primary text-lg">distance</span>
+									</div>
+									<div class="flex flex-col">
+										<span class="text-[10px] font-black uppercase tracking-widest text-slate-700">{$_('dashboard.field_work_mode')}</span>
+										<span class="text-[8px] font-bold text-slate-400">{$_('dashboard.field_work_description')}</span>
+									</div>
+								</div>
+								<button 
+									class="w-12 h-6 rounded-full relative transition-colors {isFieldWork ? 'bg-primary' : 'bg-slate-200'}"
+									onclick={() => isFieldWork = !isFieldWork}
+								>
+									<div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform {isFieldWork ? 'translate-x-6' : ''}"></div>
+								</button>
+							</div>
 							
+							{#if isFieldWork}
+								<div class="space-y-2" in:fly={{ y: -10, duration: 300 }}>
+									<label class="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
+										{$_('dashboard.field_work_note_label')}
+									</label>
+									<textarea 
+										bind:value={fieldWorkNote}
+										class="w-full min-h-[80px] p-4 bg-white border-2 border-slate-100 rounded-sm text-xs font-bold focus:border-primary outline-none transition-colors font-sans resize-none"
+										placeholder={$_('dashboard.field_work_note_placeholder')}
+									></textarea>
+								</div>
+							{/if}
+
 							<button
 								class="w-full py-8 bg-primary text-primary-foreground rounded-sm font-bold flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-xl shadow-green-500/10 disabled:opacity-50"
 								onclick={() => performAction('check-in')}
