@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { _ } from 'svelte-i18n';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import {
 		Loader2,
 		Calendar,
@@ -214,10 +215,99 @@
 			alert('Error de conexión');
 		}
 	}
+
+	// Modal States
+	let showImageModal = $state(false);
+	let selectedImage = $state('');
+
+	let showMapModal = $state(false);
+	let mapCoords = $state({ lat: 0, lng: 0, type: 'check-in' as 'check-in' | 'check-out' });
+	let map: any;
+
+	function openImage(url: string) {
+		selectedImage = url;
+		showImageModal = true;
+	}
+
+	function openMap(lat: number, lng: number, type: 'check-in' | 'check-out') {
+		mapCoords = { lat, lng, type };
+		showMapModal = true;
+	}
+
+	$effect(() => {
+		if (showMapModal && mapCoords.lat !== 0) {
+			const timer = setTimeout(() => {
+				const mapEl = document.getElementById('attendance-map');
+				if (mapEl && typeof L !== 'undefined' && data) {
+					const centerLat = data.work_center.latitude;
+					const centerLng = data.work_center.longitude;
+					const radius = data.work_center.tolerance_radius;
+
+					map = L.map('attendance-map').setView([mapCoords.lat, mapCoords.lng], 16);
+					
+					L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+						attribution: '&copy; OpenStreetMap contributors'
+					}).addTo(map);
+
+					// Work Center Marker
+					L.marker([centerLat, centerLng], {
+						icon: L.divIcon({
+							className: 'bg-primary w-4 h-4 rounded-full border-2 border-white shadow-lg',
+							iconSize: [16, 16]
+						})
+					}).addTo(map).bindPopup(`<b>${data.work_center.name}</b><br>Centro Asignado`);
+
+					// Tolerance Circle
+					L.circle([centerLat, centerLng], {
+						color: '#3b82f6',
+						fillColor: '#3b82f6',
+						fillOpacity: 0.1,
+						radius: radius
+					}).addTo(map);
+
+					// Employee Position Marker
+					const markerColor = mapCoords.type === 'check-in' ? (data.attendance.is_late ? '#ef4444' : '#10b981') : '#3b82f6';
+					L.marker([mapCoords.lat, mapCoords.lng], {
+						icon: L.divIcon({
+							className: 'w-6 h-6 flex items-center justify-center',
+							html: `<div style="background-color: ${markerColor};" class="w-4 h-4 rounded-full border-2 border-white shadow-xl animate-bounce"></div>`,
+							iconSize: [24, 24]
+						})
+					}).addTo(map).bindPopup(`<b>Posición de ${mapCoords.type === 'check-in' ? 'Entrada' : 'Salida'}</b>`).openPopup();
+
+					// Fit bounds to show both
+					const group = L.featureGroup([
+						L.marker([centerLat, centerLng]),
+						L.marker([mapCoords.lat, mapCoords.lng])
+					]);
+					map.fitBounds(group.getBounds().pad(0.2));
+				}
+			}, 150);
+
+			return () => {
+				clearTimeout(timer);
+				if (map) {
+					map.remove();
+					map = null;
+				}
+			};
+		}
+	});
 </script>
 
 <svelte:head>
 	<title>{$_('admin.attendance.detail.title')} | JGC</title>
+	<link
+		rel="stylesheet"
+		href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+		crossorigin=""
+	/>
+	<script
+		src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+		crossorigin=""
+	></script>
 </svelte:head>
 
 <div class="container mx-auto p-4 max-w-5xl space-y-6">
@@ -605,31 +695,37 @@
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
 								{#if data.attendance.evidence_urls && data.attendance.evidence_urls.length > 0}
 									{#each data.attendance.evidence_urls as url}
-										<div class="relative group rounded-lg overflow-hidden bg-slate-100 aspect-video flex items-center justify-center border shadow-inner">
+										<div 
+											class="relative group rounded-lg overflow-hidden bg-slate-100 aspect-video flex items-center justify-center border shadow-inner cursor-pointer"
+											onclick={() => openImage(url)}
+										>
 											<img 
 												src={url} 
 												alt="Evidencia" 
 												class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
 											/>
 											<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-												<Button variant="secondary" size="icon" class="rounded-full" target="_blank" href={url}>
-													<Maximize2 class="w-4 h-4" />
-												</Button>
+												<div class="bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/30">
+													<Maximize2 class="w-5 h-5 text-white" />
+												</div>
 											</div>
 										</div>
 									{/each}
 								{:else}
-									<div class="relative group rounded-lg overflow-hidden bg-slate-100 aspect-video flex items-center justify-center border shadow-inner col-span-2">
+									<div 
+										class="relative group rounded-lg overflow-hidden bg-slate-100 aspect-video flex items-center justify-center border shadow-inner col-span-2 cursor-pointer"
+										onclick={() => openImage(data.attendance.evidence_url)}
+									>
 										<img 
 											src={data.attendance.evidence_url} 
 											alt="Evidencia" 
 											class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
 										/>
 										<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-											<Button variant="secondary" size="sm" class="gap-2" target="_blank" href={data.attendance.evidence_url}>
+											<div class="flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 text-white font-bold">
 												<Maximize2 class="w-4 h-4" />
 												{$_('admin.attendance.detail.full_screen')}
-											</Button>
+											</div>
 										</div>
 									</div>
 								{/if}
@@ -678,17 +774,25 @@
 						
 						<div class="pt-2 flex flex-col gap-2">
 							{#if data.attendance.check_in_latitude}
-								<Button variant="outline" class="w-full gap-2 justify-start" target="_blank" href={getGoogleMapsUrl(data.attendance.check_in_latitude, data.attendance.check_in_longitude)}>
-									<MapPin class="w-4 h-4 text-green-500" />
-									{$_('admin.attendance.detail.entry_map')}
-									<ExternalLink class="w-3 h-3 ml-auto opacity-50" />
+								<Button variant="outline" class="w-full gap-2 justify-start h-12 border-slate-200" onclick={() => openMap(data.attendance.check_in_latitude, data.attendance.check_in_longitude, 'check-in')}>
+									<div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+										<MapPin class="w-4 h-4" />
+									</div>
+									<span class="font-bold text-slate-700">{$_('admin.attendance.detail.entry_map')}</span>
+									<div class="ml-auto p-1.5 rounded-md bg-slate-50 border border-slate-100">
+										<Maximize2 class="w-3 h-3 text-slate-400" />
+									</div>
 								</Button>
 							{/if}
 							{#if data.attendance.check_out_latitude}
-								<Button variant="outline" class="w-full gap-2 justify-start" target="_blank" href={getGoogleMapsUrl(data.attendance.check_out_latitude, data.attendance.check_out_longitude)}>
-									<MapPin class="w-4 h-4 text-primary" />
-									{$_('admin.attendance.detail.exit_map')}
-									<ExternalLink class="w-3 h-3 ml-auto opacity-50" />
+								<Button variant="outline" class="w-full gap-2 justify-start h-12 border-slate-200" onclick={() => openMap(data.attendance.check_out_latitude, data.attendance.check_out_longitude, 'check-out')}>
+									<div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+										<MapPin class="w-4 h-4" />
+									</div>
+									<span class="font-bold text-slate-700">{$_('admin.attendance.detail.exit_map')}</span>
+									<div class="ml-auto p-1.5 rounded-md bg-slate-50 border border-slate-100">
+										<Maximize2 class="w-3 h-3 text-slate-400" />
+									</div>
 								</Button>
 							{/if}
 						</div>
@@ -777,6 +881,82 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Image Preview Modal -->
+{#if showImageModal}
+	<Dialog.Root open={showImageModal} onOpenChange={(o) => !o && (showImageModal = false)}>
+		<Dialog.Content class="sm:max-w-[90vw] md:max-w-4xl p-0 overflow-hidden border-none bg-black/95">
+			<div class="relative w-full aspect-[4/3] md:aspect-video flex items-center justify-center">
+				<img 
+					src={selectedImage} 
+					alt="Full Evidence" 
+					class="max-w-full max-h-full object-contain"
+					in:fade={{ duration: 300 }}
+				/>
+				<div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+					<p class="text-white font-bold text-lg tracking-tight">
+						{$_('admin.attendance.detail.evidence_title')}
+					</p>
+					<p class="text-white/60 text-xs uppercase tracking-widest font-black">
+						{data.attendance.employee_name} • {formatDate(data.attendance.date)}
+					</p>
+				</div>
+			</div>
+		</Dialog.Content>
+	</Dialog.Root>
+{/if}
+
+<!-- Map Location Modal -->
+{#if showMapModal}
+	<Dialog.Root open={showMapModal} onOpenChange={(o) => !o && (showMapModal = false)}>
+		<Dialog.Content class="sm:max-w-full md:max-w-4xl max-h-[90vh] p-8 border-none bg-white rounded-xl shadow-2xl">
+			<Dialog.Header class="mb-6">
+				<div class="flex items-center gap-4">
+					<div class="h-12 w-12 rounded-xl {mapCoords.type === 'check-in' ? 'bg-emerald-100 text-emerald-600' : 'bg-primary/10 text-primary'} flex items-center justify-center shadow-inner">
+						<Navigation class="h-6 w-6" />
+					</div>
+					<div class="text-left space-y-0.5">
+						<Dialog.Title class="text-3xl font-black tracking-tighter text-slate-900 leading-none">
+							Visualización de Ubicación
+						</Dialog.Title>
+						<Dialog.Description class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+							Evento de {mapCoords.type === 'check-in' ? 'Entrada' : 'Salida'} • {mapCoords.lat.toFixed(6)}, {mapCoords.lng.toFixed(6)}
+						</Dialog.Description>
+					</div>
+				</div>
+			</Dialog.Header>
+
+			<div class="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-100 shadow-xl bg-slate-50">
+				<div id="attendance-map" class="h-full w-full z-0"></div>
+				
+				<!-- Map Legend Overlay -->
+				<div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+					<div class="bg-white/90 backdrop-blur-sm p-3 rounded-lg border border-slate-200 shadow-sm space-y-2 min-w-[180px]">
+						<p class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1.5 mb-1.5">Leyenda</p>
+						<div class="flex items-center gap-3">
+							<div class="w-3 h-3 rounded-full bg-primary border-2 border-white"></div>
+							<span class="text-[10px] font-bold text-slate-700">{data.work_center.name}</span>
+						</div>
+						<div class="flex items-center gap-3">
+							<div class="w-3 h-3 rounded-full {mapCoords.type === 'check-in' ? (data.attendance.is_late ? 'bg-destructive' : 'bg-green-500') : 'bg-primary'} border-2 border-white"></div>
+							<span class="text-[10px] font-bold text-slate-700">Posición Empleado</span>
+						</div>
+						<div class="flex items-center gap-3">
+							<div class="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-100"></div>
+							<span class="text-[10px] font-bold text-slate-700">Radio Tolerancia ({data.work_center.tolerance_radius}m)</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-8 flex justify-end">
+				<Button variant="secondary" class="h-12 px-10 rounded-lg font-black text-xs uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95" onclick={() => (showMapModal = false)}>
+					Cerrar Auditoría
+				</Button>
+			</div>
+		</Dialog.Content>
+	</Dialog.Root>
+{/if}
 
 <style>
 	:global(.container) {

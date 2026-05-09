@@ -14,6 +14,7 @@
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import type { Attendance, WorkShift, WorkCenter } from '$lib/types/models';
 	import { getCurrentLocation, reverseGeocode } from '$lib/services/location';
+	import { compressImage } from '$lib/utils/image';
 
 	let loading = $state(false);
 	let error = $state('');
@@ -242,9 +243,16 @@
 				// 2. Upload directly to Cloudflare R2 using PUT
 				const uploadPromises = items.map(async (item, index) => {
 					const file = evidenceFiles[index];
+					
+					// Compress before upload
+					const compressedBlob = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.75 });
+					
 					const res = await fetch(item.upload_url, {
 						method: 'PUT',
-						body: file
+						body: compressedBlob,
+						headers: {
+							'Content-Type': 'image/jpeg'
+						}
 					});
 					if (!res.ok) throw new Error(`Failed to upload ${file.name}`);
 					return item.key;

@@ -5,6 +5,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { _ } from 'svelte-i18n';
 	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
+	import { compressImage } from '$lib/utils/image';
 
 	let profile = $state<any>(null);
 	let loading = $state(true);
@@ -90,12 +91,15 @@
 			if (!res.ok) throw new Error('Failed to get upload URL');
 			const { uploadURL, key } = await res.json();
 
-			// 2. Upload to R2
+			// 2. Compress image before upload
+			const compressedBlob = await compressImage(file, { maxWidth: 512, maxHeight: 512, quality: 0.8 });
+			
+			// 3. Upload to R2
 			const uploadRes = await fetch(uploadURL, {
 				method: 'PUT',
-				body: file,
+				body: compressedBlob,
 				headers: {
-					'Content-Type': file.type
+					'Content-Type': 'image/jpeg'
 				}
 			});
 			if (!uploadRes.ok) throw new Error('Failed to upload to R2');
