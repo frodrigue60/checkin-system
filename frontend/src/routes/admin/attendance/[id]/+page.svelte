@@ -143,7 +143,16 @@
 		const getLocalISO = (dateStr: string | null) => {
 			if (!dateStr) return '';
 			try {
-				return dateStr.split('.')[0].slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+				const d = new Date(dateStr);
+				if (isNaN(d.getTime())) return '';
+				
+				// Format as YYYY-MM-DDTHH:mm in LOCAL time
+				const year = d.getFullYear();
+				const month = String(d.getMonth() + 1).padStart(2, '0');
+				const day = String(d.getDate()).padStart(2, '0');
+				const hours = String(d.getHours()).padStart(2, '0');
+				const minutes = String(d.getMinutes()).padStart(2, '0');
+				return `${year}-${month}-${day}T${hours}:${minutes}`;
 			} catch (e) { return ''; }
 		};
 
@@ -158,7 +167,12 @@
 
 		// If times are empty but we have a shift, suggest current date with shift times
 		if (!editForm.check_in && data.attendance.created_at) {
-			const datePart = data.attendance.created_at.split('T')[0];
+			const d = new Date(data.attendance.created_at);
+			const year = d.getFullYear();
+			const month = String(d.getMonth() + 1).padStart(2, '0');
+			const day = String(d.getDate()).padStart(2, '0');
+			const datePart = `${year}-${month}-${day}`;
+
 			if (data.shift) {
 				editForm.check_in = `${datePart}T${data.shift.start_time.substring(0, 5)}`;
 				editForm.check_out = `${datePart}T${data.shift.end_time.substring(0, 5)}`;
