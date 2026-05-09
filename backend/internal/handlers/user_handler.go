@@ -280,7 +280,11 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 			utils.GetLogger().Error("Error fetching basic profile", 
 				zap.Int("userID", userID), 
 				zap.Error(errBasic))
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "User not found in system",
+				"details": "Fallback query failed",
+				"user_id": userID,
+			})
 		}
 
 		profile.ID = basicUser.ID
