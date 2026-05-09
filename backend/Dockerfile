@@ -33,8 +33,9 @@ COPY --from=builder /app/migrations ./migrations
 # Copy .env.example as a base
 COPY --from=builder /app/.env.example ./.env
 
-# Expose port (defaulting to 8080, adjust if your .env differs)
-EXPOSE 8080
+# Expose port (matched with .env)
+ENV PORT=3001
+EXPOSE 3001
 
 # Run the binary
 CMD ["./api-service"]
