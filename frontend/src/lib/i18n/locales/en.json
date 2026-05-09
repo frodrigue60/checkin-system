@@ -96,7 +96,9 @@
     "pagination": "Page {current} of {total}",
     "previous": "Previous",
     "next": "Next",
-    "settings": "Preferences"
+    "settings": "Preferences",
+    "view_all": "View All",
+    "try_adjusting_filters": "Try adjusting the filters"
   },
   "errors": {
     "invalid_credentials": "Invalid email or password",
@@ -237,7 +239,8 @@
       "hint_flexible": "No lateness control, only hours.",
       "hint_field": "No geofence or lateness. Total mobility.",
       "all_week": "All week",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "no_results": "No shifts found with current criteria."
     },
     "centers": {
       "title": "Work Centers",
@@ -262,7 +265,8 @@
       "name_label": "Center Name",
       "address_label": "Center Address",
       "radius_label": "Radius",
-      "radius_hint": "Distance in meters"
+      "radius_hint": "Distance in meters",
+      "no_results": "No registered centers found."
     },
     "positions": {
       "title": "Job Positions",
@@ -284,7 +288,8 @@
       "pay_label": "Base Pay",
       "late_deduction": "Late Deduction",
       "gps_deduction": "Geofence Breach Deduction",
-      "detected_roles": "Detected roles"
+      "detected_roles": "Detected roles",
+      "no_results": "No job positions found."
     },
     "employees": {
       "title": "Personnel Directory",

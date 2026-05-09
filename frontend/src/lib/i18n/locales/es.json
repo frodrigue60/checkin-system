@@ -96,7 +96,9 @@
     "pagination": "Página {current} de {total}",
     "previous": "Anterior",
     "next": "Siguiente",
-    "settings": "Preferencias"
+    "settings": "Preferencias",
+    "view_all": "Ver Todo",
+    "try_adjusting_filters": "Pruebe ajustando los filtros"
   },
   "errors": {
     "invalid_credentials": "Email o contraseña inválidos",
@@ -237,7 +239,8 @@
       "hint_flexible": "Sin control de retrasos, solo horas.",
       "hint_field": "Sin geocerca ni retrasos. Movilidad total.",
       "all_week" : "Toda la semana",
-      "cancel_operation": "Cancelar"
+      "cancel_operation": "Cancelar",
+      "no_results": "No se encontraron turnos con los criterios actuales."
     },
     "centers": {
       "title": "Centros de Trabajo",
@@ -262,7 +265,8 @@
        "name_label": "Nombre del centro",
       "address_label": "Direccion del centro",
       "radius_label": "Radio",
-      "radius_hint": "Distancia en metros"
+      "radius_hint": "Distancia en metros",
+      "no_results": "No se encontraron sedes registradas."
     },
     "positions": {
       "title": "Puestos de Trabajo",
@@ -284,7 +288,8 @@
       "pay_label": "Sueldo base",
       "late_deduction": "Penalidad Retraso",
       "gps_deduction": "Penalidad Brecha GPS",
-      "detected_roles": "roles detectados"
+      "detected_roles": "roles detectados",
+      "no_results": "No se encontraron puestos de trabajo."
     },
     "employees": {
       "title": "Personal",
