@@ -23,7 +23,7 @@
 		History,
 		AlertTriangle
 	} from 'lucide-svelte';
-	import { PUBLIC_APP_NAME } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { resolve } from '$app/paths';
 	import { _, locale } from 'svelte-i18n';
 	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
@@ -109,15 +109,15 @@
 				class="h-10 w-10 bg-primary text-white rounded-md flex items-center justify-center shadow-sm"
 			>
 				<span class="font-black text-xs tracking-tighter"
-					>{PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}</span
+					>{env.PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}</span
 				>
 			</div>
 			<div class="flex flex-col min-w-0">
 				<span class="text-lg font-black tracking-tight text-slate-900 leading-none truncate"
-					>{PUBLIC_APP_NAME.split(' ')[0]}</span
+					>{env.PUBLIC_APP_NAME.split(' ')[0]}</span
 				>
 				<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">
-					{PUBLIC_APP_NAME.split(' ').slice(1).join(' ') || 'Enterprise'}
+					{env.PUBLIC_APP_NAME.split(' ').slice(1).join(' ') || 'Enterprise'}
 				</span>
 			</div>
 		</div>

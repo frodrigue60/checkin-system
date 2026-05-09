@@ -15,7 +15,7 @@
 		ArrowLeft,
 		Trash2
 	} from 'lucide-svelte';
-	import { PUBLIC_APP_NAME } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 
 	let currentDetails = $state([]);
 	let loading = $state(true);
@@ -118,7 +118,7 @@
 					<span
 						class="font-sans text-[10px] font-black tracking-widest text-primary uppercase mb-2 block animate-pulse"
 					>
-						{PUBLIC_APP_NAME} — {$_('admin.reports.payroll_preview')}
+						{env.PUBLIC_APP_NAME} — {$_('admin.reports.payroll_preview')}
 					</span>
 					<h2 class="font-sans text-4xl font-extrabold text-primary tracking-tighter">
 						{$_('admin.reports.cycle')}: {startDate} — {endDate}

@@ -1,7 +1,7 @@
+import { env } from '$env/dynamic/public';
 import { authState } from './auth.svelte';
-import { PUBLIC_API_URL } from '$env/static/public';
 
-const BASE_URL = PUBLIC_API_URL;
+const BASE_URL = env.PUBLIC_API_URL;
 
 export interface TypedResponse<T> extends Response {
 	json(): Promise<T>;

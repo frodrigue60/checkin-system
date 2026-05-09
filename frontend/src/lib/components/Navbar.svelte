@@ -23,7 +23,7 @@
     UserCircle2,
     Briefcase
   } from "lucide-svelte";
-  import { PUBLIC_APP_NAME } from '$env/static/public';
+  import { env } from '$env/dynamic/public';
   import Badge from "$lib/components/ui/badge/badge.svelte";
 
   let isMenuOpen = $state(false);
@@ -96,9 +96,9 @@
     <!-- Brand -->
     <a href="/" class="flex items-center gap-3 no-underline group">
       <div class="h-10 w-10 bg-primary text-white rounded-md flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-        <span class="font-black text-xs tracking-tighter">{PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}</span>
+        <span class="font-black text-xs tracking-tighter">{env.PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}</span>
       </div>
-      <span class="text-lg font-black tracking-tight text-slate-900 group-hover:text-primary transition-colors">{PUBLIC_APP_NAME}</span>
+      <span class="text-lg font-black tracking-tight text-slate-900 group-hover:text-primary transition-colors">{env.PUBLIC_APP_NAME}</span>
     </a>
 
     <!-- Desktop Navigation -->
@@ -213,7 +213,7 @@
     <div class="fixed top-0 right-0 h-full w-[300px] bg-white z-50 md:hidden shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
       <div class="p-8 pb-6 space-y-6">
         <div class="flex justify-between items-center">
-          <div class="h-14 w-14 bg-primary text-white rounded-md flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 font-black text-lg tracking-tighter">{PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}</div>
+          <div class="h-14 w-14 bg-primary text-white rounded-md flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 font-black text-lg tracking-tighter">{env.PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}</div>
           <Button variant="ghost" size="icon" class="rounded-md h-10 w-10 font-sans" onclick={() => isMenuOpen = false}>
             <X class="h-6 w-6 text-slate-400" />
           </Button>

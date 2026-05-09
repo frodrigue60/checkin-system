@@ -8,7 +8,7 @@
 	import Toaster from '$lib/components/Toaster.svelte';
 	import { page } from '$app/state';
 	import { authState } from '$lib/auth.svelte';
-	import { PUBLIC_APP_NAME } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { waitLocale, isLoading } from 'svelte-i18n';
 
 	let { children } = $props();
@@ -35,7 +35,7 @@
 </script>
 
 <svelte:head>
-	<title>{PUBLIC_APP_NAME} | Attendance</title>
+	<title>{env.PUBLIC_APP_NAME} | Attendance</title>
 	<meta name="description" content="Precision Attendance Logistics" />
 </svelte:head>
 

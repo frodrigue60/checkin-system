@@ -3,7 +3,7 @@
     import { _ } from 'svelte-i18n';
     import { authState } from '$lib/auth.svelte';
     import * as Avatar from '$lib/components/ui/avatar';
-    import { PUBLIC_APP_NAME } from '$env/static/public';
+    import { env } from '$env/dynamic/public';
     import { fly } from 'svelte/transition';
 
     const tabs = [
@@ -21,12 +21,12 @@
     <div class="flex items-center gap-3">
         <div class="h-10 w-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
             <span class="font-black text-xs tracking-tighter">
-                {PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}
+                {env.PUBLIC_APP_NAME.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase()}
             </span>
         </div>
         <div class="flex flex-col">
             <span class="text-sm font-black tracking-tight text-primary leading-none uppercase">
-                {PUBLIC_APP_NAME.split(' ')[0]}
+                {env.PUBLIC_APP_NAME.split(' ')[0]}
             </span>
             <span class="text-[9px] font-bold text-outline-variant uppercase tracking-[0.2em] mt-1">
                 Personal Portal
