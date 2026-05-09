@@ -52,3 +52,6 @@ type ExportHandler struct{ AdminBase }
 
 // BulkHandler handles bulk operations on employees, attendances, and incidents.
 type BulkHandler struct{ AdminBase }
+
+// MiscAdminHandler handles miscellaneous admin operations like audit logs and alerts.
+type MiscAdminHandler struct{ AdminBase }

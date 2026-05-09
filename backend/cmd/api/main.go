@@ -84,16 +84,7 @@ func main() {
 
 	uploadHandler := &handlers.UploadHandler{Storage: storageService}
 
-	adminHandler := &handlers.AdminHandler{
-		DB:                   db,
-		PDFService:           pdfService,
-		AttendanceService:    attendanceService,
-		AuditService:         auditService,
-		ReportService:        reportService,
-		AlertService:         alertService,
-		JustificationService: justificationService,
-		Cache:                c,
-	}
+
 
 	// Domain-specific handlers — SOLID (S): each handles one entity type
 	base := handlers.AdminBase{
@@ -117,6 +108,7 @@ func main() {
 	dashboardHandler := &handlers.DashboardHandler{AdminBase: base}
 	exportHandler := &handlers.ExportHandler{AdminBase: base}
 	bulkHandler := &handlers.BulkHandler{AdminBase: base}
+	miscHandler := &handlers.MiscAdminHandler{AdminBase: base}
 
 	attendanceHandler := &handlers.AttendanceHandler{
 		DB:                   db,
@@ -233,15 +225,15 @@ func main() {
 	ro.Get("/reports/details", reportHandler.GetReportDetails)
 	ro.Get("/reports/jobs", reportHandler.ListReportJobs)
 	ro.Get("/reports/jobs/:id", reportHandler.GetReportJob)
-	ro.Get("/alerts", adminHandler.ListAlerts)
-	ro.Post("/alerts/:id/read", adminHandler.MarkAlertAsRead)
-	ro.Get("/justifications", adminHandler.ListJustifications)
-	ro.Post("/justifications/:id/resolve", adminHandler.ResolveJustification)
+	ro.Get("/alerts", miscHandler.ListAlerts)
+	ro.Post("/alerts/:id/read", miscHandler.MarkAlertAsRead)
+	ro.Get("/justifications", miscHandler.ListJustifications)
+	ro.Post("/justifications/:id/resolve", miscHandler.ResolveJustification)
 	ro.Get("/reports/:id/export", reportHandler.DownloadIndividualReport)
 	ro.Get("/reports/export", reportHandler.DownloadBatchReport)
 	ro.Get("/stats", dashboardHandler.GetDashboardStats)
 	ro.Get("/dashboard/compliance", dashboardHandler.GetComplianceDashboard)
-	ro.Get("/audit-logs", adminHandler.ListAuditLogs)
+	ro.Get("/audit-logs", miscHandler.ListAuditLogs)
 	ro.Get("/incidents", incidentHandler.ListIncidents)
 
 	// Range deletion for reports (Admin/Manager check depending on logic, but currently in ro if it's read-only? No, deletion is RW)

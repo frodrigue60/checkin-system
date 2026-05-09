@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func (h *AdminHandler) ListAuditLogs(c *fiber.Ctx) error {
+func (h *MiscAdminHandler) ListAuditLogs(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 20)
 	if page < 1 { page = 1 }
@@ -76,7 +76,7 @@ func (h *AdminHandler) ListAuditLogs(c *fiber.Ctx) error {
 }
 
 // SYSTEM ALERTS
-func (h *AdminHandler) ListAlerts(c *fiber.Ctx) error {
+func (h *MiscAdminHandler) ListAlerts(c *fiber.Ctx) error {
 	onlyUnread := c.Query("unread") == "true"
 	limit := c.QueryInt("limit", 50)
 
@@ -88,7 +88,7 @@ func (h *AdminHandler) ListAlerts(c *fiber.Ctx) error {
 	return c.JSON(alerts)
 }
 
-func (h *AdminHandler) MarkAlertAsRead(c *fiber.Ctx) error {
+func (h *MiscAdminHandler) MarkAlertAsRead(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	if err := h.AlertService.MarkAsRead(c.Context(), id); err != nil {
 		return utils.SendError(c, fiber.StatusInternalServerError, "Internal server error", err)
@@ -97,7 +97,7 @@ func (h *AdminHandler) MarkAlertAsRead(c *fiber.Ctx) error {
 }
 
 // JUSTIFICATIONS
-func (h *AdminHandler) ListJustifications(c *fiber.Ctx) error {
+func (h *MiscAdminHandler) ListJustifications(c *fiber.Ctx) error {
 	limit := c.QueryInt("limit", 50)
 	list, err := h.JustificationService.ListPending(c.Context(), h.DB, limit)
 	if err != nil {
@@ -106,7 +106,7 @@ func (h *AdminHandler) ListJustifications(c *fiber.Ctx) error {
 	return c.JSON(list)
 }
 
-func (h *AdminHandler) ResolveJustification(c *fiber.Ctx) error {
+func (h *MiscAdminHandler) ResolveJustification(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var req struct {
 		Approve bool   `json:"approve"`
