@@ -32,3 +32,4 @@ mockups
 # Logs
 backend/logs/
 *.log
+backend/backend_log.txt
