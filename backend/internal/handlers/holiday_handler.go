@@ -66,6 +66,11 @@ func (h *HolidayHandler) CreateHoliday(c *fiber.Ctx) error {
 
 func (h *HolidayHandler) UpdateHoliday(c *fiber.Ctx) error {
 	id := c.Params("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
+	}
+
 	var holiday models.Holiday
 	if err := c.BodyParser(&holiday); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
@@ -77,10 +82,6 @@ func (h *HolidayHandler) UpdateHoliday(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(int)
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
-	}
 
 	var old models.Holiday
 	if err := tx.Get(&old, "SELECT * FROM holidays WHERE id = $1", idInt); err != nil {

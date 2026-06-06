@@ -74,6 +74,11 @@ func (h *CenterHandler) CreateCenter(c *fiber.Ctx) error {
 
 func (h *CenterHandler) UpdateCenter(c *fiber.Ctx) error {
 	id := c.Params("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
+	}
+
 	var center models.WorkCenter
 	if err := c.BodyParser(&center); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
@@ -85,10 +90,6 @@ func (h *CenterHandler) UpdateCenter(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(int)
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
-	}
 
 	var old models.WorkCenter
 	if err := tx.Get(&old, "SELECT * FROM work_centers WHERE id = $1", idInt); err != nil {
@@ -97,7 +98,7 @@ func (h *CenterHandler) UpdateCenter(c *fiber.Ctx) error {
 	}
 
 	_, err = tx.Exec("UPDATE work_centers SET name = $1, address = $2, latitude = $3, longitude = $4, tolerance_radius_meters = $5, manager_id = $6, updated_at = $7 WHERE id = $8",
-		center.Name, center.Address, center.Latitude, center.Longitude, center.ToleranceRadiusMeters, center.ManagerID, time.Now(), id)
+		center.Name, center.Address, center.Latitude, center.Longitude, center.ToleranceRadiusMeters, center.ManagerID, time.Now(), idInt)
 
 	if err != nil {
 		tx.Rollback()

@@ -75,6 +75,11 @@ func (h *ShiftHandler) CreateShift(c *fiber.Ctx) error {
 
 func (h *ShiftHandler) UpdateShift(c *fiber.Ctx) error {
 	id := c.Params("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
+	}
+
 	var shift models.WorkShift
 	if err := utils.ParseAndValidate(c, &shift); err != nil {
 		return err
@@ -86,10 +91,6 @@ func (h *ShiftHandler) UpdateShift(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(int)
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
-	}
 
 	var old models.WorkShift
 	if err := tx.Get(&old, "SELECT * FROM work_shifts WHERE id = $1", idInt); err != nil {

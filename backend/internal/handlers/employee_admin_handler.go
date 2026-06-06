@@ -184,6 +184,11 @@ func (h *EmployeeAdminHandler) CreateEmployee(c *fiber.Ctx) error {
 
 func (h *EmployeeAdminHandler) UpdateEmployee(c *fiber.Ctx) error {
 	id := c.Params("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
+	}
+
 	var emp models.Employee
 	if err := c.BodyParser(&emp); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
@@ -195,10 +200,6 @@ func (h *EmployeeAdminHandler) UpdateEmployee(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(int)
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
-	}
 
 	var old models.Employee
 	if err := tx.Get(&old, "SELECT * FROM employees WHERE id = $1", idInt); err != nil {

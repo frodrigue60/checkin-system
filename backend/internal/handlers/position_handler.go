@@ -79,6 +79,11 @@ func (h *PositionHandler) CreatePosition(c *fiber.Ctx) error {
 
 func (h *PositionHandler) UpdatePosition(c *fiber.Ctx) error {
 	id := c.Params("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
+	}
+
 	var pos models.Position
 	if err := c.BodyParser(&pos); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
@@ -90,10 +95,6 @@ func (h *PositionHandler) UpdatePosition(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(int)
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.APIError{Code: models.ErrInvalidID})
-	}
 
 	var old models.Position
 	if err := tx.Get(&old, "SELECT * FROM positions WHERE id = $1", idInt); err != nil {
