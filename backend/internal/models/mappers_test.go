@@ -19,7 +19,7 @@ func TestMapUserToDTO(t *testing.T) {
 		CreatedAt: &now,
 	}
 
-	dto := MapUserToDTO(u)
+	dto := MapUserToDTO(u, "http://localhost:8080")
 
 	assert.Equal(t, u.ID, dto.ID)
 	assert.Equal(t, u.Name, dto.Name)
@@ -46,7 +46,7 @@ func TestMapAttendanceToDTO(t *testing.T) {
 		IsAbsence:      false,
 	}
 
-	dto := MapAttendanceToDTO(a)
+	dto := MapAttendanceToDTO(a, "http://localhost:8080")
 	assert.Equal(t, "2026-04-24", dto.Date)
 	assert.Equal(t, 8.5, dto.NetHoursWorked)
 	assert.Equal(t, 850.0, dto.DailyEarnings)
@@ -59,7 +59,7 @@ func TestMapAttendanceToDTO(t *testing.T) {
 		NetHoursWorked: nil,
 		DailyEarnings:  nil,
 	}
-	dtoNil := MapAttendanceToDTO(aNil)
+	dtoNil := MapAttendanceToDTO(aNil, "http://localhost:8080")
 	assert.Equal(t, 0.0, dtoNil.NetHoursWorked)
 	assert.Equal(t, 0.0, dtoNil.DailyEarnings)
 }
