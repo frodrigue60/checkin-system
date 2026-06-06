@@ -19,8 +19,14 @@ import (
 )
 
 func setupTestCenterHandler(t *testing.T) (*fiber.App, sqlmock.Sqlmock, *cache.Cache, *CenterHandler) {
-	app := fiber.New()
-	
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			if len(c.Response().Body()) > 0 {
+				return nil
+			}
+			return fiber.DefaultErrorHandler(c, err)
+		},
+	})
 	// Mock auth middleware setting user_id
 	app.Use(func(c *fiber.Ctx) error {
 		c.Locals("user_id", 42)

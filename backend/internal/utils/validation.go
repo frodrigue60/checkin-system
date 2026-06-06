@@ -31,11 +31,13 @@ func ValidateStruct(s interface{}) []*ErrorResponse {
 // ParseAndValidate is a helper to parse body and validate struct
 func ParseAndValidate(c *fiber.Ctx, out interface{}) error {
 	if err := c.BodyParser(out); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return fiber.ErrBadRequest
 	}
 
 	if errors := ValidateStruct(out); len(errors) > 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": errors})
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": errors})
+		return fiber.ErrBadRequest
 	}
 
 	return nil

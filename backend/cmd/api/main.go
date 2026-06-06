@@ -138,7 +138,14 @@ func main() {
 	workerService.StartGhostSessionCleaner()
 
 	// 4. Initialize Fiber App
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			if len(c.Response().Body()) > 0 {
+				return nil
+			}
+			return fiber.DefaultErrorHandler(c, err)
+		},
+	})
 
 	// Middleware
 	app.Use(logger.New())

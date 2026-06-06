@@ -18,7 +18,14 @@ import (
 )
 
 func TestEmployeeLifecycleFlow(t *testing.T) {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			if len(c.Response().Body()) > 0 {
+				return nil
+			}
+			return fiber.DefaultErrorHandler(c, err)
+		},
+	})
 
 	// Auth mock middleware setting admin user_id
 	app.Use(func(c *fiber.Ctx) error {
